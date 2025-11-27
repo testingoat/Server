@@ -740,10 +740,16 @@
 
     <!-- End of Settings Tab -->
 
-    <script type="module">
-        import '/public/vendor/chart.umd.min.js';
-        const Chart = window.Chart;
-                // --- Global Variables ---
+    <script>
+                  // --- Chart.js Resolution ---
+                  const __chartCandidateGlobal = typeof window !== 'undefined' ? window.Chart : undefined;
+                  let Chart = null;
+                  if (typeof __chartCandidateGlobal === 'function') {
+                      Chart = __chartCandidateGlobal;
+                  } else if (__chartCandidateGlobal && typeof __chartCandidateGlobal.Chart === 'function') {
+                      Chart = __chartCandidateGlobal.Chart;
+                  }
+                  // --- Global Variables ---
                 const DEBUG = false;
                 let memoryChart, cpuChart, dbStorageChart, netRpsChart, netLatencyChart;
                 let logs = [];
