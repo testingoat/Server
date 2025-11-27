@@ -1,7 +1,11 @@
+import dotenv from 'dotenv';
 import fastifySession from '@fastify/session';
 import ConnectMongoDBSession from 'connect-mongodb-session';
-// import { Store } from 'express-session';
 import { Admin } from '../models/user.js';
+
+// Load environment variables from .env as early as possible
+dotenv.config();
+
 export const PORT = process.env.PORT || 3000;
 export const COOKIE_PASSWORD = process.env.COOKIE_PASSWORD;
 const MongoDBStore = ConnectMongoDBSession(fastifySession);
