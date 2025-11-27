@@ -28,10 +28,10 @@ jobs:
           ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
 
       - name: Backup configs
-        run: ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.STAGING_HOST }} 'sudo /var/www/goatgoat-staging/server/scripts/backup_configs.sh'
+        run: ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.STAGING_HOST }} '/var/www/goatgoat-staging/server/scripts/backup_configs.sh'
 
       - name: Deploy code
-        run: ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.STAGING_HOST }} 'sudo /var/www/goatgoat-staging/server/scripts/deploy.sh'
+        run: ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.STAGING_HOST }} '/var/www/goatgoat-staging/server/scripts/deploy.sh'
 
       - name: Smoke test
         run: |
