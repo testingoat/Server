@@ -202,6 +202,36 @@ const start = async () => {
         }
     });
 
+    // Serve static assets from dist/public for paths under /public/*
+    app.get('/public/*', async (request: any, reply: FastifyReply) => {
+        try {
+            const fs = await import('fs');
+            const path = await import('path');
+
+            const wildcardPath = request.params['*'] || '';
+            const safePath = wildcardPath.replace(/(\.\.[/\\])+/g, '');
+            const filePath = path.join(process.cwd(), 'dist', 'public', safePath);
+
+            if (!fs.existsSync(filePath)) {
+                reply.code(404).send({ message: 'File not found' });
+                return;
+            }
+
+            if (filePath.endsWith('.js')) {
+                reply.type('application/javascript');
+            } else if (filePath.endsWith('.css')) {
+                reply.type('text/css');
+            } else if (filePath.endsWith('.html')) {
+                reply.type('text/html');
+            }
+
+            const stream = fs.createReadStream(filePath);
+            reply.send(stream);
+        } catch (error: any) {
+            reply.code(500).send({ message: 'Error serving static file', error: error.message });
+        }
+    });
+
     try {
         // 1. Register Network Monitoring Middleware
         const { networkMiddleware } = await import('./features/monitoring/network/network-middleware.js');
