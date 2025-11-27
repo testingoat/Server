@@ -443,3 +443,26 @@ After thorough review and exploration of the codebase, five critical issues were
 
 ### Timestamp
 - Reconstruction work completed on: 2025-11-24 (local dev / staging backup)
+
+## Push Project to GitHub
+
+### Problem
+- The project needed to be pushed to a new GitHub repository (`https://github.com/testingoat/Server.git`).
+- Initial attempt to run `git init && git remote add ...` failed because PowerShell does not support `&&` operator in the current version.
+
+### Solution
+- Created a comprehensive `.gitignore` file to exclude `node_modules`, `.env`, `dist/`, `logs/`, etc.
+- Ran git commands sequentially:
+  1. `git init`
+  2. `git remote add origin ...`
+  3. `git add .`
+  4. `git commit -m "Initial commit"`
+  5. `git branch -M main`
+  6. `git push -u origin main`
+
+### Files Touched
+- **New:** `.gitignore`
+- **Modified:** Project is now a git repository.
+
+### Timestamp
+- 2025-11-27
