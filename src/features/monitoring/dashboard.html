@@ -743,11 +743,14 @@
     <script>
                   // --- Chart.js Resolution ---
                   const __chartCandidateGlobal = typeof window !== 'undefined' ? window.Chart : undefined;
-                  let Chart = null;
-                  if (typeof __chartCandidateGlobal === 'function') {
-                      Chart = __chartCandidateGlobal;
+                  let ChartCtor = null;
+                  if (__chartCandidateGlobal && typeof __chartCandidateGlobal === 'function') {
+                      ChartCtor = __chartCandidateGlobal;
                   } else if (__chartCandidateGlobal && typeof __chartCandidateGlobal.Chart === 'function') {
-                      Chart = __chartCandidateGlobal.Chart;
+                      ChartCtor = __chartCandidateGlobal.Chart;
+                  }
+                  if (!ChartCtor) {
+                      console.error('Monitoring dashboard: Chart constructor not resolved. window.Chart =', __chartCandidateGlobal);
                   }
                   // --- Global Variables ---
                 const DEBUG = false;
@@ -806,8 +809,8 @@
 
                 function initCharts() {
                     // Memory
-                    const ctxMem = document.getElementById('memoryChart').getContext('2d');
-                    memoryChart = new Chart(ctxMem, {
+                      const ctxMem = document.getElementById('memoryChart').getContext('2d');
+                    memoryChart = new ChartCtor(ctxMem, {
                         type: 'line',
                         data: {
                             labels: [],
@@ -824,8 +827,8 @@
                     });
 
                     // CPU
-                    const ctxCpu = document.getElementById('cpuChart').getContext('2d');
-                    cpuChart = new Chart(ctxCpu, {
+                      const ctxCpu = document.getElementById('cpuChart').getContext('2d');
+                    cpuChart = new ChartCtor(ctxCpu, {
                         type: 'line',
                         data: {
                             labels: [],
@@ -841,9 +844,9 @@
                         options: commonOptions
                     });
 
-                    const ctxDbStorage = document.getElementById('dbStorageChart');
-                    if (ctxDbStorage) {
-                        dbStorageChart = new Chart(ctxDbStorage.getContext('2d'), {
+                      const ctxDbStorage = document.getElementById('dbStorageChart');
+                      if (ctxDbStorage) {
+                        dbStorageChart = new ChartCtor(ctxDbStorage.getContext('2d'), {
                             type: 'doughnut',
                             data: {
                                 labels: ['Data Size', 'Index Size', 'Free Space'],
@@ -872,9 +875,9 @@
                         });
                     }
 
-                    const ctxNetRps = document.getElementById('netRpsChart');
-                    if (ctxNetRps) {
-                        netRpsChart = new Chart(ctxNetRps.getContext('2d'), {
+                      const ctxNetRps = document.getElementById('netRpsChart');
+                      if (ctxNetRps) {
+                        netRpsChart = new ChartCtor(ctxNetRps.getContext('2d'), {
                             type: 'line',
                             data: {
                                 labels: [],
@@ -891,9 +894,9 @@
                         });
                     }
 
-                    const ctxNetLatency = document.getElementById('netLatencyChart');
-                    if (ctxNetLatency) {
-                        netLatencyChart = new Chart(ctxNetLatency.getContext('2d'), {
+                      const ctxNetLatency = document.getElementById('netLatencyChart');
+                      if (ctxNetLatency) {
+                        netLatencyChart = new ChartCtor(ctxNetLatency.getContext('2d'), {
                             type: 'line',
                             data: {
                                 labels: [],
