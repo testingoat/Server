@@ -35,5 +35,5 @@ jobs:
 
       - name: Smoke test
         run: |
-          curl -f https://staging.goatgoat.in/health || echo "Health check failed or endpoint missing"
+          curl -f https://staging.goatgoat.tech/health
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.STAGING_HOST }} 'pm2 show goatgoat-staging'
