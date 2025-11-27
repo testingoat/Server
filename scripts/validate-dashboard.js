@@ -39,7 +39,9 @@ const builtinCalls = new Set([
     'setAttribute', 'getAttribute', 'hasAttribute',
     'Error', 'WebSocket', 'getContext', 'json', 'parseFloat', 'toFixed', 'toLocaleTimeString',
     'toString', 'slice', 'set', 'update', 'remove', 'click', 'close', 'now', 'isArray',
-    'add', 'catch', 'rgba', 'var', 'if'
+    'add', 'catch', 'rgba', 'var', 'if',
+    // Monitoring dashboard helpers we allow without explicit function declarations
+    'ChartCtor', '__chartCandidateGlobal'
 ]);
 
 const report = {

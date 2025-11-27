@@ -7,6 +7,7 @@
     <title>GoatGoat Server Monitoring</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+    <script src="/public/vendor/chart.umd.min.js"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -811,7 +812,7 @@
                 function initCharts() {
                     // Memory
                       const ctxMem = document.getElementById('memoryChart').getContext('2d');
-                    memoryChart = new ChartCtor(ctxMem, {
+                    memoryChart = new Chart(ctxMem, {
                         type: 'line',
                         data: {
                             labels: [],
@@ -829,7 +830,7 @@
 
                     // CPU
                       const ctxCpu = document.getElementById('cpuChart').getContext('2d');
-                    cpuChart = new ChartCtor(ctxCpu, {
+                    cpuChart = new Chart(ctxCpu, {
                         type: 'line',
                         data: {
                             labels: [],
@@ -847,7 +848,7 @@
 
                       const ctxDbStorage = document.getElementById('dbStorageChart');
                       if (ctxDbStorage) {
-                        dbStorageChart = new ChartCtor(ctxDbStorage.getContext('2d'), {
+                          dbStorageChart = new Chart(ctxDbStorage.getContext('2d'), {
                             type: 'doughnut',
                             data: {
                                 labels: ['Data Size', 'Index Size', 'Free Space'],
@@ -878,7 +879,7 @@
 
                       const ctxNetRps = document.getElementById('netRpsChart');
                       if (ctxNetRps) {
-                        netRpsChart = new ChartCtor(ctxNetRps.getContext('2d'), {
+                        netRpsChart = new Chart(ctxNetRps.getContext('2d'), {
                             type: 'line',
                             data: {
                                 labels: [],
@@ -897,7 +898,7 @@
 
                       const ctxNetLatency = document.getElementById('netLatencyChart');
                       if (ctxNetLatency) {
-                        netLatencyChart = new ChartCtor(ctxNetLatency.getContext('2d'), {
+                        netLatencyChart = new Chart(ctxNetLatency.getContext('2d'), {
                             type: 'line',
                             data: {
                                 labels: [],
