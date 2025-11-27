@@ -743,17 +743,7 @@
 
     <script>
                   // --- Chart.js Resolution ---
-                  const __chartCandidateGlobal = typeof window !== 'undefined' ? window.Chart : undefined;
-                  function Chart(ctx, config) {
-                      if (__chartCandidateGlobal && typeof __chartCandidateGlobal === 'function') {
-                          return new __chartCandidateGlobal(ctx, config);
-                      }
-                      if (__chartCandidateGlobal && typeof __chartCandidateGlobal.Chart === 'function') {
-                          return new __chartCandidateGlobal.Chart(ctx, config);
-                      }
-                      console.error('Monitoring dashboard: Chart constructor not resolved. window.Chart =', __chartCandidateGlobal);
-                      throw new Error('Chart constructor not available');
-                  }
+                  // Chart.js is loaded globally via /public/vendor/chart.umd.min.js
                   // --- Global Variables ---
                 const DEBUG = false;
                 let memoryChart, cpuChart, dbStorageChart, netRpsChart, netLatencyChart;
