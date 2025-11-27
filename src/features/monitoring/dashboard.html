@@ -8,6 +8,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <script src="/public/vendor/chart.umd.min.js"></script>
+    <script>
+        // Ensure Chart is available as a global even if the UMD build uses the CommonJS path
+        (function () {
+            try {
+                if (typeof window !== 'undefined' &&
+                    typeof window.Chart === 'undefined' &&
+                    typeof window.module !== 'undefined' &&
+                    window.module && window.module.exports) {
+                    window.Chart = window.module.exports;
+                }
+            } catch (e) {
+                // Ignore – initCharts will log if Chart is still missing
+            }
+        })();
+    </script>
     <style>
         :root {
             --bg-color: #0f172a;
