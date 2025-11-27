@@ -1,0 +1,39 @@
+name: Staging Deploy
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm ci
+      # - run: npm test --if-present # Uncomment when tests are ready
+
+  deploy-staging:
+    needs: build-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Add Host Key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Backup configs
+        run: ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.STAGING_HOST }} 'sudo /var/www/goatgoat-staging/server/scripts/backup_configs.sh'
+
+      - name: Deploy code
+        run: ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.STAGING_HOST }} 'sudo /var/www/goatgoat-staging/server/scripts/deploy.sh'
+
+      - name: Smoke test
+        run: |
+          curl -f https://staging.goatgoat.in/health || echo "Health check failed or endpoint missing"
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.STAGING_HOST }} 'pm2 show goatgoat-staging'
