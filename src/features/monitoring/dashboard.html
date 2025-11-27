@@ -7,7 +7,6 @@
     <title>GoatGoat Server Monitoring</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    <script src="/public/vendor/chart.umd.min.js"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -743,8 +742,30 @@
 
     <script>
                   // --- Chart.js Resolution ---
-                  // Chart.js is loaded globally via /public/vendor/chart.umd.min.js
-                  // --- Global Variables ---
+                  // --- Chart.js Loader (dynamic to avoid AdminJS stripping script tags) ---
+                  async function loadChartJs() {
+                      if (typeof window !== 'undefined' && window.Chart) {
+                          return;
+                      }
+                      await new Promise((resolve, reject) => {
+                          const existing = document.querySelector('script[data-monitoring-chart]');
+                          if (existing) {
+                              existing.addEventListener('load', () => resolve(), { once: true });
+                              existing.addEventListener('error', (e) => reject(e), { once: true });
+                              return;
+                          }
+
+                          const script = document.createElement('script');
+                          script.src = '/public/vendor/chart.umd.min.js';
+                          script.async = false;
+                          script.dataset.monitoringChart = 'true';
+                          script.onload = () => resolve();
+                          script.onerror = (e) => reject(e);
+                          document.head.appendChild(script);
+                      });
+                  }
+
+                    // --- Global Variables ---
                 const DEBUG = false;
                 let memoryChart, cpuChart, dbStorageChart, netRpsChart, netLatencyChart;
                 let logs = [];
@@ -1650,9 +1671,14 @@
                 }
 
                   // --- Initialization ---
-                  document.addEventListener('DOMContentLoaded', () => {
+                  document.addEventListener('DOMContentLoaded', async () => {
                     try {
-                        initCharts();
+                        await loadChartJs();
+                        if (typeof Chart === 'undefined') {
+                            console.error('Chart is still undefined after loading Chart.js');
+                        } else {
+                            initCharts();
+                        }
                     } catch (e) {
                         console.error('Failed to initialize charts:', e);
                     }
