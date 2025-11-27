@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔔 GoatGoat FCM Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            border-radius: 10px;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #404040;
+        }
+        .card h3 {
+            color: #f39c12;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #404040;
+        }
+        .metric:last-child {
+            border-bottom: none;
+        }
+        .metric-label {
+            color: #cccccc;
+        }
+        .metric-value {
+            color: #ffffff;
+            font-weight: 600;
+        }
+        .status-healthy {
+            color: #4CAF50;
+        }
+        .placeholder {
+            padding: 20px;
+            text-align: center;
+            background: #2d2d2d;
+            border-radius: 10px;
+            border: 1px solid #404040;
+        }
+        .quick-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .quick-link {
+            display: block;
+            padding: 15px;
+            background: #3d3d3d;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            transition: all 0.3s ease;
+            border: 1px solid #555555;
+        }
+        .quick-link:hover {
+            background: #4d4d4d;
+            transform: translateY(-2px);
+        }
+        
+        /* Phase 4.2: Table styles for FCM tokens */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        
+        table th, table td {
+            text-align: left;
+            padding: 12px 15px;
+            border-bottom: 1px solid #404040;
+        }
+        
+        table th {
+            background-color: #3d3d3d;
+            color: #f39c12;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+        }
+        
+        table td {
+            color: #ffffff;
+        }
+        
+        table tr:hover {
+            background-color: #3d3d3d;
+        }
+        
+        .token-text {
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .table-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #404040;
+            border-radius: 5px;
+        }
+        
+        /* Phase 4.3: History table specific styles */
+        .history-table {
+            margin-top: 30px;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .status-failed {
+            background-color: #f44336;
+            color: white;
+        }
+        
+        .status-partial {
+            background-color: #ff9800;
+            color: white;
+        }
+        
+        .status-queued {
+            background-color: #9e9e9e;
+            color: white;
+        }
+        
+        .pagination-info {
+            text-align: center;
+            margin-top: 15px;
+            color: #cccccc;
+            font-size: 0.9rem;
+        }
+        
+        /* Phase 4.4: Notification Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #f39c12;
+            font-weight: 600;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            background-color: #3d3d3d;
+            border: 1px solid #555555;
+            border-radius: 5px;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #f39c12;
+            box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.2);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .send-button {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .send-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+        }
+        
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .feedback-message {
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+        
+        .feedback-success {
+            background-color: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+        }
+        
+        .feedback-error {
+            background-color: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 GoatGoat FCM Management</h1>
+            <p>Push notification management dashboard - Phase 2 Implementation</p>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>📊 FCM Statistics</h3>
+                <div class="metric">
+                    <span class="metric-label">Status:</span>
+                    <span class="metric-value status-healthy">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Tokens:</span>
+                    <span class="metric-value">--</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Active Sellers:</span>
+                    <span class="metric-value">--</span>
+                </div>
+            </div>
+            
+            <!-- Phase 4.4: Notification Sending Form -->
+            <div class="card">
+                <h3>🔔 Send Notification</h3>
+                <form id="notificationForm">
+                    <div class="form-group">
+                        <label for="notificationTitle">Notification Title</label>
+                        <input 
+                            type="text" 
+                            id="notificationTitle" 
+                            name="title" 
+                            placeholder="Enter notification title"
+                            maxlength="100"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notificationMessage">Message</label>
+                        <textarea 
+                            id="notificationMessage" 
+                            name="message" 
+                            placeholder="Enter your notification message"
+                            maxlength="500"
+                            required
+                        ></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="targetingType">Send To</label>
+                        <select id="targetingType" name="targetType" required>
+                            <option value="all">All Sellers (21 tokens)</option>
+                            <option value="sellers">Specific Sellers</option>
+                            <option value="tokens">Specific Tokens</option>
+                        </select>
+                    </div>
+                    
+                    <button type="submit" class="send-button" id="sendButton">
+                        📤 Send Notification (Dry Run)
+                    </button>
+                    
+                    <div id="notificationFeedback"></div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Phase 4.2: FCM Tokens Table -->
+        <div class="card" style="margin-bottom: 30px;">
+            <h3>📋 Registered FCM Tokens</h3>
+            <div class="table-container">
+                <table id="tokensTable">
+                    <thead>
+                        <tr>
+                            <th>Seller</th>
+                            <th>Token</th>
+                            <th>Platform</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Phase 4.3: Notification History Table -->
+        <div class="card history-table" style="margin-bottom: 30px;">
+            <h3>📈 Notification History</h3>
+            <div class="table-container">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Message</th>
+                            <th>Targeting</th>
+                            <th>Status</th>
+                            <th>Sent</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="6">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="historyPagination" class="pagination-info"></div>
+        </div>
+        
+        <div class="placeholder">
+            <h3>🚧 Implementation Progress</h3>
+            <p>✅ Phase 1: Discovery & Mapping - Complete</p>
+            <p>✅ Phase 2: Minimal Scaffold - Complete</p>
+            <p>⏳ Phase 3: API Endpoints - Next</p>
+            <p>⏳ Phase 4: Frontend Integration - After Phase 3</p>
+        </div>
+        
+        <div class="quick-links">
+            <a href="/admin" class="quick-link">🏠 Admin Panel</a>
+            <a href="/admin/monitoring-dashboard" class="quick-link">📊 Monitoring</a>
+            <a href="/admin/resources/Seller" class="quick-link">👥 Sellers</a>
+        </div>
+    </div>
+    
+    <script>
+        // Phase 4.1: Wire FCM Statistics API
+        console.log('FCM Dashboard - Phase 4.1: Loading statistics...');
+        
+        async function loadFCMStatistics() {
+            try {
+                console.log('Fetching FCM statistics from /admin/fcm-management/api/stats');
+                const response = await fetch('/admin/fcm-management/api/stats');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('FCM Statistics received:', data);
+                
+                if (data.success && data.stats) {
+                    // Update the FCM Statistics card with real data
+                    updateStatisticsDisplay(data.stats);
+                } else {
+                    console.error('API returned error:', data.error || 'Unknown error');
+                    updateStatisticsError(data.error || 'Failed to load statistics');
+                }
+            } catch (error) {
+                console.error('Failed to load FCM statistics:', error);
+                updateStatisticsError(error.message);
+            }
+        }
+        
+        // Helper function to find elements by label text (safe vanilla JS)
+        function findByLabel(labelText) {
+            const labels = document.querySelectorAll('.metric-label');
+            for (let label of labels) {
+                if (label.textContent.trim().startsWith(labelText)) {
+                    return label.nextElementSibling; // the .metric-value next to it
+                }
+            }
+            return null;
+        }
+        
+        function updateStatisticsDisplay(stats) {
+            console.log('Updating statistics display with:', stats);
+            
+            // Use safe element finding
+            const statusElement = findByLabel("Status:");
+            const totalTokensElement = findByLabel("Total Tokens:");
+            const activeSellersElement = findByLabel("Active Sellers:");
+            
+            // Update status
+            if (statusElement) {
+                statusElement.textContent = '🟢 Online';
+                statusElement.classList.add('status-healthy');
+                console.log('✅ Status updated');
+            } else {
+                console.error('❌ Status element not found');
+            }
+            
+            // Update total tokens
+            if (totalTokensElement) {
+                totalTokensElement.textContent = stats.tokens?.total || '0';
+                console.log('✅ Total tokens updated:', stats.tokens?.total);
+            } else {
+                console.error('❌ Total tokens element not found');
+            }
+            
+            // Update active sellers
+            if (activeSellersElement) {
+                activeSellersElement.textContent = stats.tokens?.sellersWithTokens || '0';
+                console.log('✅ Active sellers updated:', stats.tokens?.sellersWithTokens);
+            } else {
+                console.error('❌ Active sellers element not found');
+            }
+            
+            console.log('✅ Statistics display updated successfully');
+        }
+        
+        function updateStatisticsError(errorMessage) {
+            // Use safe element finding for error display
+            const statusElement = findByLabel("Status:");
+            const totalTokensElement = findByLabel("Total Tokens:");
+            const activeSellersElement = findByLabel("Active Sellers:");
+            
+            if (statusElement) {
+                statusElement.textContent = '🔴 Error';
+                statusElement.classList.remove('status-healthy');
+                statusElement.style.color = '#ff6b6b';
+            }
+            
+            if (totalTokensElement) {
+                totalTokensElement.textContent = 'Error';
+            }
+            
+            if (activeSellersElement) {
+                activeSellersElement.textContent = 'Error';
+            }
+            
+            console.error('❌ Statistics display updated with error:', errorMessage);
+        }
+        
+        // Phase 4.2: Load FCM Tokens function
+        async function loadTokens() {
+            try {
+                console.log('Fetching FCM tokens from /admin/fcm-management/api/tokens');
+                const response = await fetch('/admin/fcm-management/api/tokens');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('FCM Tokens received:', data);
+                
+                const tableBody = document.querySelector('#tokensTable tbody');
+                tableBody.innerHTML = '';
+                
+                if (data.success && data.tokens && data.tokens.length > 0) {
+                    data.tokens.forEach(token => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${token.sellerEmail || 'Unknown'}</td>
+                            <td><span class="token-text">${token.token || 'N/A'}</span></td>
+                            <td>${token.platform || 'android'}</td>
+                            <td>${new Date(token.createdAt).toLocaleString()}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    console.log(`✅ Loaded ${data.tokens.length} FCM tokens`);
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="4">No tokens found</td></tr>';
+                    console.log('⚠️ No FCM tokens found');
+                }
+            } catch (error) {
+                console.error('Failed to load FCM tokens:', error);
+                const tableBody = document.querySelector('#tokensTable tbody');
+                tableBody.innerHTML = '<tr><td colspan="4">Error loading tokens</td></tr>';
+            }
+        }
+        
+        // Phase 4.3: Load Notification History function
+        async function loadHistory(page = 1, limit = 10) {
+            try {
+                console.log(`Fetching notification history from /admin/fcm-management/api/history?page=${page}&limit=${limit}`);
+                const response = await fetch(`/admin/fcm-management/api/history?page=${page}&limit=${limit}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('Notification History received:', data);
+                
+                const tableBody = document.querySelector('#historyTable tbody');
+                const paginationDiv = document.querySelector('#historyPagination');
+                
+                tableBody.innerHTML = '';
+                
+                if (data.success && data.notifications && data.notifications.length > 0) {
+                    data.notifications.forEach(notification => {
+                        const row = document.createElement('tr');
+                        
+                        // Create status badge
+                        const statusClass = `status-${notification.status || 'unknown'}`;
+                        const statusBadge = `<span class="status-badge ${statusClass}">${notification.status || 'Unknown'}</span>`;
+                        
+                        row.innerHTML = `
+                            <td>${notification.title || 'Untitled'}</td>
+                            <td>${notification.message || 'No message'}</td>
+                            <td>${notification.targeting || 'Unknown'}</td>
+                            <td>${statusBadge}</td>
+                            <td>${notification.stats?.sent || 0}</td>
+                            <td>${new Date(notification.createdAt).toLocaleString()}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                    
+                    // Update pagination info
+                    paginationDiv.innerHTML = `
+                        Page ${data.page} of ${data.totalPages} 
+                        (${data.count} of ${data.totalCount} notifications)
+                    `;
+                    
+                    console.log(`✅ Loaded ${data.notifications.length} notification history records`);
+                } else {
+                    // Show "no notifications yet" message
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; font-style: italic; color: #999;">No notifications sent yet</td></tr>';
+                    paginationDiv.innerHTML = 'No notification history available';
+                    console.log('⚠️ No notification history found (expected for new system)');
+                }
+            } catch (error) {
+                console.error('Failed to load notification history:', error);
+                const tableBody = document.querySelector('#historyTable tbody');
+                const paginationDiv = document.querySelector('#historyPagination');
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ff6b6b;">Error loading history</td></tr>';
+                paginationDiv.innerHTML = '';
+            }
+        }
+        
+        // Phase 4.4: Send Notification Form Handler
+        async function sendNotification(formData) {
+            const sendButton = document.getElementById('sendButton');
+            const feedbackDiv = document.getElementById('notificationFeedback');
+            
+            try {
+                // Disable button and show loading
+                sendButton.disabled = true;
+                sendButton.textContent = '📤 Sending... (Dry Run)';
+                feedbackDiv.innerHTML = '';
+                
+                console.log('Sending notification with data:', formData);
+                
+                const response = await fetch('/admin/fcm-management/api/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                console.log('Notification API response:', result);
+                
+                if (result.success) {
+                    // Show success message
+                    feedbackDiv.innerHTML = `
+                        <div class="feedback-message feedback-success">
+                            ✅ <strong>Notification Validated Successfully!</strong><br>
+                            📊 Would send to <strong>${result.targetTokenCount}</strong> FCM tokens<br>
+                            🎯 Target Type: <strong>${result.targetType}</strong><br>
+                            🔄 Mode: <strong>DRY RUN</strong> (not actually sent)
+                        </div>
+                    `;
+                    
+                    // Reset form after success
+                    document.getElementById('notificationForm').reset();
+                    
+                    console.log('✅ Notification form submitted successfully (dry run)');
+                } else {
+                    // Show error message
+                    feedbackDiv.innerHTML = `
+                        <div class="feedback-message feedback-error">
+                            ❌ <strong>Notification Failed</strong><br>
+                            Error: ${result.error || 'Unknown error occurred'}
+                        </div>
+                    `;
+                    console.error('❌ Notification submission failed:', result.error);
+                }
+            } catch (error) {
+                console.error('Network error sending notification:', error);
+                feedbackDiv.innerHTML = `
+                    <div class="feedback-message feedback-error">
+                        ❌ <strong>Network Error</strong><br>
+                        Could not connect to server. Please try again.
+                    </div>
+                `;
+            } finally {
+                // Re-enable button
+                sendButton.disabled = false;
+                sendButton.textContent = '📤 Send Notification (Dry Run)';
+            }
+        }
+        
+        // Form submission handler
+        function setupNotificationForm() {
+            const form = document.getElementById('notificationForm');
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    // Get form data
+                    const formData = {
+                        title: document.getElementById('notificationTitle').value.trim(),
+                        message: document.getElementById('notificationMessage').value.trim(),
+                        targetType: document.getElementById('targetingType').value
+                    };
+                    
+                    // Basic validation
+                    if (!formData.title || !formData.message) {
+                        document.getElementById('notificationFeedback').innerHTML = `
+                            <div class="feedback-message feedback-error">
+                                ❌ Please fill in both title and message
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Send notification
+                    await sendNotification(formData);
+                });
+                
+                console.log('📝 Notification form event listeners set up');
+            }
+        }
+        
+        // Load all dashboard components when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('FCM Dashboard - Phase 4.4 loaded successfully');
+            loadFCMStatistics();
+            loadTokens(); // Phase 4.2: Load tokens table
+            loadHistory(); // Phase 4.3: Load notification history
+            setupNotificationForm(); // Phase 4.4: Setup notification form
+        });
+    </script>
+</body>
+</html>

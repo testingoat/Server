@@ -1,0 +1,174 @@
+import { DeliveryPartner } from '../../models/index.js';
+import OTPService from '../../services/otp.js';
+import jwt from 'jsonwebtoken';
+
+// Generate JWT tokens (copied from auth.js)
+const generateTokens = (user) => {
+    console.log(' DEBUG - JWT Environment Variables:');
+    console.log('ACCESS_TOKEN_SECRET exists:', !!process.env.ACCESS_TOKEN_SECRET);
+    console.log('ACCESS_TOKEN_SECRET length:', process.env.ACCESS_TOKEN_SECRET?.length);
+    console.log('REFRESH_TOKEN_SECRET exists:', !!process.env.REFRESH_TOKEN_SECRET);
+    console.log('REFRESH_TOKEN_SECRET length:', process.env.REFRESH_TOKEN_SECRET?.length);
+    
+    const payload = {
+        userId: user._id,
+        role: user.role,
+    };
+    
+    const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: '15m',
+    });
+    
+    const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
+        expiresIn: '7d',
+    });
+    
+    return { accessToken, refreshToken };
+};
+
+// Store OTPs temporarily (in production, use Redis)
+const otpStore = new Map();
+
+export const requestDeliveryOtp = async (req, reply) => {
+    try {
+        const { phone } = req.body;
+        console.log('Delivery OTP request for phone:', phone);
+
+        if (!phone) {
+            return reply.status(400).send({
+                success: false,
+                message: 'Phone number is required',
+            });
+        }
+
+        // Check if delivery partner exists
+        const deliveryPartner = await DeliveryPartner.findOne({ phone });
+
+        if (!deliveryPartner) {
+            console.log('Delivery Partner not found for phone:', phone);
+            return reply.status(404).send({
+                success: false,
+                message: 'Phone number not registered as Delivery Partner',
+                needsRegistration: true,
+            });
+        }
+
+        // Generate and store OTP
+        const otp = OTPService.generateOTP();
+        otpStore.set(phone, {
+            otp,
+            timestamp: Date.now(),
+            attempts: 0,
+        });
+
+        // Send OTP (implement your SMS service)
+        try {
+            await OTPService.sendOTP(phone, otp);
+            console.log('OTP sent successfully to:', phone);
+        } catch (smsError) {
+            console.error('SMS sending failed:', smsError);
+            // Continue anyway for development
+        }
+
+        return reply.send({
+            success: true,
+            message: 'OTP sent successfully to your registered phone number',
+        });
+    } catch (error) {
+        console.error('Delivery OTP request error:', error);
+        return reply.status(500).send({
+            success: false,
+            message: 'An error occurred while sending OTP',
+        });
+    }
+};
+
+export const verifyDeliveryOtp = async (req, reply) => {
+    try {
+        const { phone, otp } = req.body;
+        console.log('Delivery OTP verification for phone:', phone);
+
+        if (!phone || !otp) {
+            return reply.status(400).send({
+                success: false,
+                message: 'Phone number and OTP are required',
+            });
+        }
+
+        // Check stored OTP
+        const storedOtpData = otpStore.get(phone);
+        if (!storedOtpData) {
+            return reply.status(400).send({
+                success: false,
+                message: 'OTP not found or expired. Please request a new OTP.',
+            });
+        }
+
+        // Check OTP expiry (5 minutes)
+        const otpAge = Date.now() - storedOtpData.timestamp;
+        if (otpAge > 5 * 60 * 1000) {
+            otpStore.delete(phone);
+            return reply.status(400).send({
+                success: false,
+                message: 'OTP has expired. Please request a new OTP.',
+            });
+        }
+
+        // Verify OTP
+        if (storedOtpData.otp !== otp) {
+            storedOtpData.attempts += 1;
+            if (storedOtpData.attempts >= 3) {
+                otpStore.delete(phone);
+                return reply.status(400).send({
+                    success: false,
+                    message: 'Too many incorrect attempts. Please request a new OTP.',
+                });
+            }
+            return reply.status(400).send({
+                success: false,
+                message: 'Invalid OTP. Please try again.',
+            });
+        }
+
+        // Find delivery partner
+        const deliveryPartner = await DeliveryPartner.findOne({ phone });
+        if (!deliveryPartner) {
+            otpStore.delete(phone);
+            return reply.status(404).send({
+                success: false,
+                message: 'Delivery Partner not found',
+                needsRegistration: true,
+            });
+        }
+
+        // Clear OTP
+        otpStore.delete(phone);
+
+        // Generate tokens
+        const { accessToken, refreshToken } = generateTokens(deliveryPartner);
+
+        return reply.send({
+            success: true,
+            message: 'OTP verified successfully',
+            token: accessToken,
+            refreshToken,
+            user: {
+                _id: deliveryPartner._id,
+                phone: deliveryPartner.phone,
+                email: deliveryPartner.email,
+                name: deliveryPartner.name,
+                role: 'DeliveryPartner',
+                isActivated: deliveryPartner.isActivated,
+                fcmTokens: deliveryPartner.fcmTokens || [],
+                createdAt: deliveryPartner.createdAt,
+                updatedAt: deliveryPartner.updatedAt,
+            },
+        });
+    } catch (error) {
+        console.error('Delivery OTP verification error:', error);
+        return reply.status(500).send({
+            success: false,
+            message: 'An error occurred while verifying OTP',
+        });
+    }
+};

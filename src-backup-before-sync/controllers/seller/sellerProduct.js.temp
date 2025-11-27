@@ -1,0 +1,265 @@
+import Product from '../../models/products.js';
+import Category from '../../models/category.js';
+import { Seller } from '../../models/user.js';
+
+// Get all products for the authenticated seller
+export const getSellerProducts = async (req, reply) => {
+  try {
+    const { userId, role } = req.user;
+    
+    if (role !== 'Seller') {
+      return reply.status(403).send({
+        success: false,
+        message: 'Access denied. Seller role required.'
+      });
+    }
+
+    const products = await Product.find({ 
+      sellerId: userId 
+    })
+    .populate('category', 'name')
+    .sort({ createdAt: -1 });
+
+    console.log(📦 Found  products for seller );
+
+    return reply.send({
+      success: true,
+      data: products
+    });
+  } catch (error) {
+    console.error('Get Seller Products Error:', error);
+    return reply.status(500).send({
+      success: false,
+      message: 'Failed to retrieve products'
+    });
+  }
+};
+
+// Create a new product
+export const createProduct = async (req, reply) => {
+  try {
+    const { userId, role } = req.user;
+    const { name, price, discountPrice, quantity, category, description, stock } = req.body;
+    
+    if (role !== 'Seller') {
+      return reply.status(403).send({
+        success: false,
+        message: 'Access denied. Seller role required.'
+      });
+    }
+
+    // Get seller info for sellerName
+    const seller = await Seller.findById(userId);
+    if (!seller) {
+      return reply.status(404).send({
+        success: false,
+        message: 'Seller not found'
+      });
+    }
+
+    // Validate required fields
+    if (!name || !price || !quantity || !category) {
+      return reply.status(400).send({
+        success: false,
+        message: 'Name, price, quantity, and category are required'
+      });
+    }
+
+    // Verify category exists
+    const categoryExists = await Category.findById(category);
+    if (!categoryExists) {
+      return reply.status(400).send({
+        success: false,
+        message: 'Invalid category selected'
+      });
+    }
+
+    const newProduct = new Product({
+      name,
+      price,
+      discountPrice,
+      quantity,
+      category,
+      description: description || '',
+      stock: stock || 0,
+      sellerId: userId,
+      sellerName: seller.storeName || seller.name,
+      createdBy: 'seller',
+      isActive: true,
+      image: 'https://via.placeholder.com/300x300?text=Product+Image' // Temporary placeholder
+    });
+
+    const savedProduct = await newProduct.save();
+    const populatedProduct = await Product.findById(savedProduct._id).populate('category', 'name');
+
+    console.log(✅ Product created by seller : );
+
+    return reply.status(201).send({
+      success: true,
+      message: 'Product created successfully',
+      data: populatedProduct
+    });
+  } catch (error) {
+    console.error('Create Product Error:', error);
+    return reply.status(500).send({
+      success: false,
+      message: 'Failed to create product'
+    });
+  }
+};
+
+// Update a product
+export const updateProduct = async (req, reply) => {
+  try {
+    const { userId, role } = req.user;
+    const { id } = req.params;
+    const updateData = req.body;
+    
+    if (role !== 'Seller') {
+      return reply.status(403).send({
+        success: false,
+        message: 'Access denied. Seller role required.'
+      });
+    }
+
+    // Find product and verify ownership
+    const product = await Product.findOne({ _id: id, sellerId: userId });
+    if (!product) {
+      return reply.status(404).send({
+        success: false,
+        message: 'Product not found or access denied'
+      });
+    }
+
+    // If category is being updated, verify it exists
+    if (updateData.category) {
+      const categoryExists = await Category.findById(updateData.category);
+      if (!categoryExists) {
+        return reply.status(400).send({
+          success: false,
+          message: 'Invalid category selected'
+        });
+      }
+    }
+
+    // Update the product
+    const updatedProduct = await Product.findByIdAndUpdate(
+      id,
+      { ...updateData, updatedAt: new Date() },
+      { new: true }
+    ).populate('category', 'name');
+
+    console.log(📝 Product updated by seller: );
+
+    return reply.send({
+      success: true,
+      message: 'Product updated successfully',
+      data: updatedProduct
+    });
+  } catch (error) {
+    console.error('Update Product Error:', error);
+    return reply.status(500).send({
+      success: false,
+      message: 'Failed to update product'
+    });
+  }
+};
+
+// Delete a product
+export const deleteProduct = async (req, reply) => {
+  try {
+    const { userId, role } = req.user;
+    const { id } = req.params;
+    
+    if (role !== 'Seller') {
+      return reply.status(403).send({
+        success: false,
+        message: 'Access denied. Seller role required.'
+      });
+    }
+
+    // Find product and verify ownership
+    const product = await Product.findOne({ _id: id, sellerId: userId });
+    if (!product) {
+      return reply.status(404).send({
+        success: false,
+        message: 'Product not found or access denied'
+      });
+    }
+
+    await Product.findByIdAndDelete(id);
+
+    console.log(🗑️ Product deleted by seller: );
+
+    return reply.send({
+      success: true,
+      message: 'Product deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete Product Error:', error);
+    return reply.status(500).send({
+      success: false,
+      message: 'Failed to delete product'
+    });
+  }
+};
+
+// Toggle product active status
+export const toggleProductStatus = async (req, reply) => {
+  try {
+    const { userId, role } = req.user;
+    const { id } = req.params;
+    const { isActive } = req.body;
+    
+    if (role !== 'Seller') {
+      return reply.status(403).send({
+        success: false,
+        message: 'Access denied. Seller role required.'
+      });
+    }
+
+    // Find product and verify ownership
+    const product = await Product.findOne({ _id: id, sellerId: userId });
+    if (!product) {
+      return reply.status(404).send({
+        success: false,
+        message: 'Product not found or access denied'
+      });
+    }
+
+    product.isActive = isActive;
+    await product.save();
+
+    console.log(🔄 Product status toggled:  -> );
+
+    return reply.send({
+      success: true,
+      message: Product  successfully,
+      data: { isActive: product.isActive }
+    });
+  } catch (error) {
+    console.error('Toggle Product Status Error:', error);
+    return reply.status(500).send({
+      success: false,
+      message: 'Failed to update product status'
+    });
+  }
+};
+
+// Get all categories for product creation
+export const getCategories = async (req, reply) => {
+  try {
+    const categories = await Category.find().select('name image');
+    
+    return reply.send({
+      success: true,
+      data: categories
+    });
+  } catch (error) {
+    console.error('Get Categories Error:', error);
+    return reply.status(500).send({
+      success: false,
+      message: 'Failed to retrieve categories'
+    });
+  }
+};

@@ -1,0 +1,18 @@
+            user: {
+                id: seller._id,
+                name: seller.name,
+                phone: seller.phone,
+                email: seller.email,
+                role: seller.role,
+                storeName: seller.storeName,
+                storeAddress: seller.storeAddress,
+                city: seller.city,
+                pincode: seller.pincode,
+                gstNumber: seller.gstNumber,
+                accountNumber: seller.accountNumber,
+                ifscCode: seller.ifscCode,
+                storeContact: seller.storeContact,
+                storeWebsite: seller.storeWebsite,
+                isVerified: seller.isVerified,
+                profileCompleted: seller.profileCompleted
+            },

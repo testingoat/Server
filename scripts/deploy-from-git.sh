@@ -1,0 +1,16 @@
+#!/bin/bash
+echo Starting git-based deployment...
+cd /var/www/goatgoat-staging/server
+echo Current branch:
+git branch --show-current
+echo Creating backup before git pull...
+mkdir -p /var/www/backups
+tar -czf /var/www/backups/pre-git-deploy.tar.gz /var/www/goatgoat-staging/server
+echo Pulling latest changes from git...
+git pull origin main
+echo Running build process...
+bash scripts/build-staging.sh
+echo Restarting PM2 process...
+pm2 restart goatgoat-staging
+sleep 3
+echo Git deployment completed!

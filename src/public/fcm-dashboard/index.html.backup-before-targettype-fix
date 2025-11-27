@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔔 GoatGoat FCM Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: #1a1a1a;
+            color: #ffffff;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            border-radius: 10px;
+        }
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #404040;
+        }
+        .card h3 {
+            color: #f39c12;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .metric-label {
+            font-weight: 500;
+            color: #cccccc;
+        }
+        .metric-value {
+            font-weight: 600;
+            color: #f39c12;
+        }
+        .status-healthy {
+            color: #4CAF50;
+        }
+        .status-warning {
+            color: #FF9800;
+        }
+        .status-error {
+            color: #f44336;
+        }
+        .placeholder {
+            background: #2d2d2d;
+            border: 2px dashed #404040;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            color: #999;
+            margin: 20px 0;
+        }
+        .placeholder h3 {
+            color: #f39c12;
+            margin-bottom: 15px;
+        }
+        .placeholder p {
+            margin: 8px 0;
+        }
+        .quick-links {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        .quick-link {
+            background: #f39c12;
+            color: #1a1a1a;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        .quick-link:hover {
+            background: #e67e22;
+            transform: translateY(-2px);
+        }
+        .table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #404040;
+        }
+        th {
+            background: #f39c12;
+            color: #1a1a1a;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        td {
+            color: #cccccc;
+            font-size: 0.9rem;
+        }
+        .token-preview {
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            background: #1a1a1a;
+            padding: 3px 6px;
+            border-radius: 3px;
+        }
+        .seller-email {
+            color: #4CAF50;
+            font-weight: 500;
+        }
+        .pagination-info {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #999;
+            text-align: center;
+        }
+        .history-table {
+            width: 100%;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #f39c12;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #404040;
+            border-radius: 5px;
+            color: #ffffff;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #f39c12;
+            box-shadow: 0 0 5px rgba(243, 156, 18, 0.3);
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        .send-button {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+        
+        .send-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.3);
+        }
+        
+        .send-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .feedback-message {
+            padding: 12px 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            font-weight: 500;
+        }
+        
+        .feedback-success {
+            background-color: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+        }
+        
+        .feedback-error {
+            background-color: rgba(244, 67, 54, 0.2);
+            border: 1px solid #f44336;
+            color: #f44336;
+        }
+
+        /* Phase 5.1: Multi-Select Controls Styles */
+        .multi-select-container {
+            position: relative;
+            border: 1px solid #404040;
+            border-radius: 5px;
+            background: #1a1a1a;
+            margin-bottom: 10px;
+        }
+
+        .multi-select-header {
+            padding: 12px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .multi-select-header:hover {
+            background: #2d2d2d;
+        }
+
+        .multi-select-options {
+            display: none;
+            border-top: 1px solid #404040;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #1a1a1a;
+        }
+
+        .multi-select-option {
+            padding: 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .multi-select-option:hover {
+            background: #333;
+        }
+
+        .multi-select-option.selected {
+            background: #f39c12;
+            color: #1a1a1a;
+        }
+
+        .multi-select-option.selected:hover {
+            background: #e67e22;
+        }
+
+        .selected-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .selected-item {
+            background: #f39c12;
+            color: #1a1a1a;
+            padding: 6px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .selected-item .remove {
+            cursor: pointer;
+            font-weight: bold;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.2);
+            font-size: 0.8rem;
+        }
+
+        .selected-item .remove:hover {
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .dropdown-arrow.open {
+            transform: rotate(180deg);
+        }
+
+        .loader {
+            display: inline-block;
+            font-size: 0.9rem;
+            margin-left: 8px;
+            opacity: 0.7;
+        }
+
+        .option-info {
+            font-size: 0.8rem;
+            opacity: 0.7;
+        }
+
+        .token-preview-option {
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔔 GoatGoat FCM Management</h1>
+            <p>Push notification management dashboard - <span id="systemModeDisplay">Loading...</span></p>
+        </div>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>📊 FCM Statistics</h3>
+                <div class="metric">
+                    <span class="metric-label">Status:</span>
+                    <span class="metric-value status-healthy">Loading...</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Total Tokens:</span>
+                    <span class="metric-value">--</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Active Sellers:</span>
+                    <span class="metric-value">--</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">FCM Mode:</span>
+                    <span class="metric-value" id="fcmModeIndicator">Loading...</span>
+                </div>
+            </div>
+            
+            <!-- Phase 5.1: Enhanced Notification Sending Form -->
+            <div class="card">
+                <h3>🔔 Send Notification</h3>
+                <form id="notificationForm">
+                    <div class="form-group">
+                        <label for="notificationTitle">Notification Title</label>
+                        <input 
+                            type="text" 
+                            id="notificationTitle" 
+                            name="title" 
+                            placeholder="Enter notification title"
+                            maxlength="100"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="notificationMessage">Message</label>
+                        <textarea 
+                            id="notificationMessage" 
+                            name="message" 
+                            placeholder="Enter your notification message"
+                            maxlength="500"
+                            required
+                        ></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="targetingType">Send To</label>
+                        <select id="targetingType" name="targetType" required>
+                            <option value="all">All Sellers (21 tokens)</option>
+                            <option value="sellers">Specific Sellers</option>
+                            <option value="tokens">Specific Tokens</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Phase 5.1: Dynamic Target Selection Controls -->
+                    <div id="specificSellerControls" class="form-group" style="display: none;">
+                        <label>Select Sellers <span id="sellerLoader" class="loader" style="display: none;">Loading...</span></label>
+                        <div class="multi-select-container">
+                            <div class="multi-select-header" id="sellerSelectHeader">
+                                <span>Choose sellers...</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+                            <div class="multi-select-options" id="sellerSelectOptions">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+                        <div class="selected-items" id="selectedSellers"></div>
+                    </div>
+
+                    <div id="specificTokenControls" class="form-group" style="display: none;">
+                        <label>Select Tokens <span id="tokenLoader" class="loader" style="display: none;">Loading...</span></label>
+                        <div class="multi-select-container">
+                            <div class="multi-select-header" id="tokenSelectHeader">
+                                <span>Choose tokens...</span>
+                                <span class="dropdown-arrow">▼</span>
+                            </div>
+                            <div class="multi-select-options" id="tokenSelectOptions">
+                                <!-- Dynamically populated -->
+                            </div>
+                        </div>
+                        <div class="selected-items" id="selectedTokens"></div>
+                    </div>
+                    
+                    <button type="submit" class="send-button" id="sendButton">
+                        📤 <span id="sendButtonText">Send Notification (Loading...)</span>
+                    </button>
+                    
+                    <div id="notificationFeedback"></div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Phase 4.2: FCM Tokens Table -->
+        <div class="card" style="margin-bottom: 30px;">
+            <h3>📋 Registered FCM Tokens</h3>
+            <div class="table-container">
+                <table id="tokensTable">
+                    <thead>
+                        <tr>
+                            <th>Seller</th>
+                            <th>Token</th>
+                            <th>Platform</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="4">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Phase 4.3: Notification History Table -->
+        <div class="card history-table" style="margin-bottom: 30px;">
+            <h3>📈 Notification History</h3>
+            <div class="table-container">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Message</th>
+                            <th>Targeting</th>
+                            <th>Status</th>
+                            <th>Sent</th>
+                            <th>Created At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td colspan="6">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div id="historyPagination" class="pagination-info"></div>
+        </div>
+        
+        <div class="quick-links">
+            <a href="/admin" class="quick-link">🏠 Admin Panel</a>
+            <a href="/admin/monitoring-dashboard" class="quick-link">📊 Monitoring</a>
+            <a href="/admin/resources/Seller" class="quick-link">👥 Sellers</a>
+        </div>
+    </div>
+    
+    <script>
+        // Phase 4.1: Wire FCM Statistics API
+        console.log('FCM Dashboard - Phase 5.1: Loading statistics...');
+        
+        async function loadFCMStatistics() {
+            try {
+                console.log('Fetching FCM statistics from /admin/fcm-management/api/stats');
+                const response = await fetch('/admin/fcm-management/api/stats');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('FCM Statistics received:', data);
+                
+                if (data.success && data.stats) {
+                    // Update the FCM Statistics card with real data
+                    updateStatisticsDisplay(data.stats);
+                } else {
+                    console.error('API returned error:', data.error || 'Unknown error');
+                    updateStatisticsError(data.error || 'Failed to load statistics');
+                }
+            } catch (error) {
+                console.error('Failed to load FCM statistics:', error);
+                updateStatisticsError(error.message);
+            }
+        }
+        
+        // Helper function to find elements by label text (safe vanilla JS)
+        function findByLabel(labelText) {
+            const labels = document.querySelectorAll('.metric-label');
+            for (let label of labels) {
+                if (label.textContent.includes(labelText)) {
+                    return label.nextElementSibling;
+                }
+            }
+            return null;
+        }
+        
+        // FIXED: updateStatisticsDisplay to use correct API response structure  
+        // Phase 5.2: Enhanced with FCM mode display
+        function updateStatisticsDisplay(stats) {
+            console.log('Updating statistics display with:', stats);
+            
+            // Phase 5.2: Update FCM mode indicators
+            updateFCMmodeDisplay(stats.system);
+            
+            // Update Total Tokens - FIXED: use stats.overview.totalTokens
+            const totalTokensElement = findByLabel('Total Tokens');
+            if (totalTokensElement) {
+                totalTokensElement.textContent = stats.overview?.totalTokens || stats.tokens?.total || '--';
+                totalTokensElement.className = 'metric-value';
+                console.log('Updated Total Tokens:', totalTokensElement.textContent);
+            }
+            
+            // Update Active Sellers - FIXED: use stats.overview.totalSellers  
+            const activeSellersElement = findByLabel('Active Sellers');
+            if (activeSellersElement) {
+                activeSellersElement.textContent = stats.overview?.totalSellers || stats.tokens?.sellersWithTokens || '--';
+                activeSellersElement.className = 'metric-value';
+                console.log('Updated Active Sellers:', activeSellersElement.textContent);
+            }
+            
+            // Update Status
+            const statusElement = findByLabel('Status');
+            if (statusElement) {
+                const tokenCount = stats.overview?.totalTokens || stats.tokens?.total || 0;
+                if (tokenCount > 0) {
+                    statusElement.textContent = 'Online';
+                    statusElement.className = 'metric-value status-healthy';
+                } else {
+                    statusElement.textContent = 'No Tokens';
+                    statusElement.className = 'metric-value status-warning';
+                }
+                console.log('Updated Status:', statusElement.textContent);
+            }
+        }
+        
+        // Phase 5.2: Update FCM mode display across UI
+        function updateFCMmodeDisplay(systemStats) {
+            if (!systemStats) return;
+            
+            const isLive = systemStats.fcmLiveMode === true;
+            const mode = systemStats.mode || (isLive ? 'LIVE' : 'DRY-RUN');
+            const maxTokens = systemStats.fcmMaxTokens || 50;
+            
+            // Update header mode display
+            const modeDisplay = document.getElementById('systemModeDisplay');
+            if (modeDisplay) {
+                if (isLive) {
+                    modeDisplay.innerHTML = '<span style="color: #f44336; font-weight: bold;">🔴 LIVE MODE</span>';
+                } else {
+                    modeDisplay.innerHTML = '<span style="color: #4CAF50; font-weight: bold;">🧪 DRY-RUN MODE</span>';
+                }
+            }
+            
+            // Update statistics card FCM mode indicator
+            const fcmModeIndicator = document.getElementById('fcmModeIndicator');
+            if (fcmModeIndicator) {
+                fcmModeIndicator.textContent = `${mode} (Max: ${maxTokens})`;
+                fcmModeIndicator.className = isLive ? 'metric-value status-error' : 'metric-value status-healthy';
+            }
+            
+            // Update send button text and style
+            const sendButton = document.getElementById('sendButton');
+            const sendButtonText = document.getElementById('sendButtonText');
+            if (sendButton && sendButtonText) {
+                if (isLive) {
+                    sendButtonText.textContent = 'Send Notification (LIVE 🔴)';
+                    sendButton.style.background = 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)';
+                    sendButton.title = `LIVE MODE - Will send real push notifications (max ${maxTokens} tokens)`;
+                } else {
+                    sendButtonText.textContent = 'Send Notification (DRY-RUN 🧪)';
+                    sendButton.style.background = 'linear-gradient(135deg, #f39c12 0%, #e67e22 100%)';
+                    sendButton.title = `DRY-RUN MODE - Will validate but not send real notifications (max ${maxTokens} tokens)`;
+                }
+            }
+            
+            console.log(`✅ FCM Mode updated: ${mode} (Live: ${isLive})`);
+        }
+        
+        function updateStatisticsError(errorMessage) {
+            const statusElement = findByLabel('Status');
+            if (statusElement) {
+                statusElement.textContent = 'Error';
+                statusElement.className = 'metric-value status-error';
+            }
+            console.error('Statistics error:', errorMessage);
+        }
+
+        // Phase 4.2: Load FCM Tokens Table
+        async function loadTokens() {
+            try {
+                console.log('Fetching FCM tokens from /admin/fcm-management/api/tokens');
+                const response = await fetch('/admin/fcm-management/api/tokens');
+                const data = await response.json();
+                
+                console.log('FCM Tokens received:', data);
+                
+                const tableBody = document.querySelector('#tokensTable tbody');
+                
+                if (data.success && data.tokens && data.tokens.length > 0) {
+                    // Clear loading message
+                    tableBody.innerHTML = '';
+                    
+                    // Add each token to the table
+                    data.tokens.forEach(token => {
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td class="seller-email">${token.sellerEmail}</td>
+                            <td>
+                                <code>${token.token.substring(0, 25)}…</code>
+                                <span style="cursor:pointer;margin-left:4px;" onclick="copyToken('${token.token}')" title="Copy full token">📋</span>
+                            </td>
+                            <td>${token.platform || 'unknown'}</td>
+                            <td>${new Date(token.createdAt).toLocaleDateString()}</td>
+                        `;
+                    });
+                    
+                    console.log(`✅ Loaded ${data.tokens.length} FCM tokens`);
+                } else {
+                    // Show "no tokens yet" message
+                    tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; font-style: italic; color: #999;">No FCM tokens registered yet</td></tr>';
+                    console.log('⚠️ No FCM tokens found (expected for new system)');
+                }
+            } catch (error) {
+                console.error('Failed to load FCM tokens:', error);
+                const tableBody = document.querySelector('#tokensTable tbody');
+                tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #ff6b6b;">Error loading tokens</td></tr>';
+            }
+        }
+
+        // Phase 4.3: Load Notification History
+        async function loadHistory() {
+            try {
+                console.log('Fetching notification history from /admin/fcm-management/api/history');
+                const response = await fetch('/admin/fcm-management/api/history');
+                const data = await response.json();
+                
+                console.log('Notification History received:', data);
+                
+                const tableBody = document.querySelector('#historyTable tbody');
+                const paginationDiv = document.querySelector('#historyPagination');
+                
+                if (data.success && data.notifications && data.notifications.length > 0) {
+                    // Clear loading message
+                    tableBody.innerHTML = '';
+                    
+                    // Add each notification to the table
+                    data.notifications.forEach(notification => {
+                        const row = tableBody.insertRow();
+                        row.innerHTML = `
+                            <td style="font-weight: 500;">${notification.title}</td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${notification.message}</td>
+                            <td>${notification.targeting || notification.targetType}</td>
+                            <td style="color: ${notification.status === 'sent' ? '#4CAF50' : '#FF9800'}">${notification.status}</td>
+                            <td>${notification.sentCount || 0}</td>
+                            <td>${new Date(notification.createdAt).toLocaleDateString()}</td>
+                        `;
+                    });
+                    
+                    // Update pagination info
+                    paginationDiv.innerHTML = `
+                        Page ${data.page} of ${data.totalPages} 
+                        (${data.count} of ${data.totalCount} notifications)
+                    `;
+                    
+                    console.log(`✅ Loaded ${data.notifications.length} notification history records`);
+                } else {
+                    // Show "no notifications yet" message
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; font-style: italic; color: #999;">No notifications sent yet</td></tr>';
+                    paginationDiv.innerHTML = 'No notification history available';
+                    console.log('⚠️ No notification history found (expected for new system)');
+                }
+            } catch (error) {
+                console.error('Failed to load notification history:', error);
+                const tableBody = document.querySelector('#historyTable tbody');
+                const paginationDiv = document.querySelector('#historyPagination');
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ff6b6b;">Error loading history</td></tr>';
+                paginationDiv.innerHTML = '';
+            }
+        }
+        
+        // ====================================
+        // Phase 5.1: API Data Fetching & Target Selection
+        // ====================================
+        
+        let sellersData = null;
+        let selectedSellers = [];
+        let selectedTokens = [];
+        
+        // Fetch sellers and tokens data from API
+        async function fetchSellersData() {
+            try {
+                console.log('🔄 Fetching sellers data from API...');
+                
+                const response = await fetch('/admin/fcm-management/api/tokens');
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Process sellers from tokens data (improved approach)
+                    const sellersMap = {};
+                    data.tokens.forEach(token => {
+                        if (!sellersMap[token.sellerId]) {
+                            sellersMap[token.sellerId] = {
+                                id: token.sellerId,
+                                email: token.sellerEmail,
+                                tokenCount: 0
+                            };
+                        }
+                        sellersMap[token.sellerId].tokenCount++;
+                    });
+                    
+                    const result = {
+                        sellers: Object.values(sellersMap),
+                        tokens: data.tokens,
+                        totalCount: data.count,
+                        totalSellers: data.totalSellers
+                    };
+                    
+                    console.log(`✅ Loaded ${result.sellers.length} sellers and ${result.tokens.length} tokens`);
+                    return result;
+                }
+                throw new Error('API response indicated failure');
+            } catch (error) {
+                console.error('❌ Error fetching sellers data:', error);
+                return null;
+            }
+        }
+        
+        // Handle target type change - show/hide appropriate controls
+        function handleTargetTypeChange() {
+            const targetType = document.getElementById('targetingType').value;
+            const sellerControls = document.getElementById('specificSellerControls');
+            const tokenControls = document.getElementById('specificTokenControls');
+            
+            // Hide all specific controls first
+            sellerControls.style.display = 'none';
+            tokenControls.style.display = 'none';
+            
+            // Clear previous selections
+            clearSelections();
+            
+            // Show appropriate controls
+            if (targetType === 'sellers') {
+                sellerControls.style.display = 'block';
+                loadAndPopulateSellerOptions();
+            } else if (targetType === 'tokens') {
+                tokenControls.style.display = 'block';
+                loadAndPopulateTokenOptions();
+            }
+        }
+        
+        // Clear all selections
+        function clearSelections() {
+            selectedSellers = [];
+            selectedTokens = [];
+            updateSelectedSellersDisplay();
+            updateSelectedTokensDisplay();
+        }
+        
+        // Load and populate seller options
+        async function loadAndPopulateSellerOptions() {
+            const sellerLoader = document.getElementById('sellerLoader');
+            const optionsContainer = document.getElementById('sellerSelectOptions');
+            
+            try {
+                sellerLoader.style.display = 'inline-block';
+                
+                if (!sellersData) {
+                    sellersData = await fetchSellersData();
+                }
+                
+                if (sellersData && sellersData.sellers) {
+                    optionsContainer.innerHTML = '';
+                    
+                    sellersData.sellers.forEach(seller => {
+                        const option = document.createElement('div');
+                        option.className = 'multi-select-option';
+                        option.innerHTML = `
+                            <span>${seller.email}</span>
+                            <span class="option-info">(${seller.tokenCount} tokens)</span>
+                        `;
+                        option.addEventListener('click', () => toggleSellerSelection(seller, option));
+                        optionsContainer.appendChild(option);
+                    });
+                    
+                    console.log(`✅ Populated ${sellersData.sellers.length} seller options`);
+                } else {
+                    optionsContainer.innerHTML = '<div style="padding: 12px; color: #999;">No sellers found</div>';
+                }
+            } catch (error) {
+                console.error('❌ Error loading seller options:', error);
+                optionsContainer.innerHTML = '<div style="padding: 12px; color: #f44336;">Error loading sellers</div>';
+            } finally {
+                sellerLoader.style.display = 'none';
+            }
+        }
+        
+        // Load and populate token options
+        async function loadAndPopulateTokenOptions() {
+            const tokenLoader = document.getElementById('tokenLoader');
+            const optionsContainer = document.getElementById('tokenSelectOptions');
+            
+            try {
+                tokenLoader.style.display = 'inline-block';
+                
+                if (!sellersData) {
+                    sellersData = await fetchSellersData();
+                }
+                
+                if (sellersData && sellersData.tokens) {
+                    optionsContainer.innerHTML = '';
+                    
+                    sellersData.tokens.forEach(token => {
+                        const option = document.createElement('div');
+                        option.className = 'multi-select-option';
+                        option.innerHTML = `
+                            <div>
+                                <div>${token.sellerEmail}</div>
+                                <div class="token-preview-option">${token.token.substring(0, 24)}...</div>
+                            </div>
+                        `;
+                        option.addEventListener('click', () => toggleTokenSelection(token, option));
+                        optionsContainer.appendChild(option);
+                    });
+                    
+                    console.log(`✅ Populated ${sellersData.tokens.length} token options`);
+                } else {
+                    optionsContainer.innerHTML = '<div style="padding: 12px; color: #999;">No tokens found</div>';
+                }
+            } catch (error) {
+                console.error('❌ Error loading token options:', error);
+                optionsContainer.innerHTML = '<div style="padding: 12px; color: #f44336;">Error loading tokens</div>';
+            } finally {
+                tokenLoader.style.display = 'none';
+            }
+        }
+        
+        // Toggle seller selection
+        function toggleSellerSelection(seller, optionElement) {
+            const index = selectedSellers.findIndex(s => s.id === seller.id);
+            if (index > -1) {
+                selectedSellers.splice(index, 1);
+                optionElement.classList.remove('selected');
+            } else {
+                selectedSellers.push(seller);
+                optionElement.classList.add('selected');
+            }
+            updateSelectedSellersDisplay();
+        }
+        
+        // Toggle token selection
+        function toggleTokenSelection(token, optionElement) {
+            const index = selectedTokens.findIndex(t => t.token === token.token);
+            if (index > -1) {
+                selectedTokens.splice(index, 1);
+                optionElement.classList.remove('selected');
+            } else {
+                selectedTokens.push(token);
+                optionElement.classList.add('selected');
+            }
+            updateSelectedTokensDisplay();
+        }
+        
+        // Update selected sellers display
+        function updateSelectedSellersDisplay() {
+            const container = document.getElementById('selectedSellers');
+            container.innerHTML = '';
+            
+            selectedSellers.forEach(seller => {
+                const item = document.createElement('div');
+                item.className = 'selected-item';
+                item.innerHTML = `
+                    <span>${seller.email}</span>
+                    <span class="remove" onclick="removeSelectedSeller('${seller.id}')" title="Remove">×</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        // Update selected tokens display
+        function updateSelectedTokensDisplay() {
+            const container = document.getElementById('selectedTokens');
+            container.innerHTML = '';
+            
+            selectedTokens.forEach(token => {
+                const item = document.createElement('div');
+                item.className = 'selected-item';
+                item.innerHTML = `
+                    <span>${token.sellerEmail} (${token.token.substring(0, 8)}...)</span>
+                    <span class="remove" onclick="removeSelectedToken('${token.token}')" title="Remove">×</span>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        // Remove selected seller
+        function removeSelectedSeller(sellerId) {
+            selectedSellers = selectedSellers.filter(s => s.id !== sellerId);
+            updateSelectedSellersDisplay();
+            
+            // Update visual state of options
+            const option = [...document.querySelectorAll('#sellerSelectOptions .multi-select-option')]
+                .find(opt => opt.textContent.includes(selectedSellers.find(s => s.id === sellerId)?.email || ''));
+            if (option) {
+                option.classList.remove('selected');
+            }
+        }
+        
+        // Remove selected token
+        function removeSelectedToken(tokenId) {
+            selectedTokens = selectedTokens.filter(t => t.token !== tokenId);
+            updateSelectedTokensDisplay();
+            
+            // Update visual state of options
+            const option = [...document.querySelectorAll('#tokenSelectOptions .multi-select-option')]
+                .find(opt => opt.textContent.includes(tokenId.substring(0, 8)));
+            if (option) {
+                option.classList.remove('selected');
+            }
+        }
+        
+        // Toggle dropdown visibility
+        function toggleDropdown(headerId, optionsId, arrowId) {
+            const header = document.getElementById(headerId);
+            const options = document.getElementById(optionsId);
+            const arrow = header.querySelector('.dropdown-arrow');
+            
+            if (options.style.display === 'none' || !options.style.display) {
+                options.style.display = 'block';
+                arrow.classList.add('open');
+            } else {
+                options.style.display = 'none';
+                arrow.classList.remove('open');
+            }
+        }
+        
+        // Phase 4.4: Send Notification Form Handler (Enhanced with AI agent fixes)
+        async function sendNotification(formData) {
+            const sendButton = document.getElementById('sendButton');
+            const sendButtonText = document.getElementById('sendButtonText');
+            const feedbackDiv = document.getElementById('notificationFeedback');
+            
+            // Store original button text
+            const originalButtonText = sendButtonText ? sendButtonText.textContent : sendButton.textContent;
+            
+            try {
+                // Disable button and show loading
+                sendButton.disabled = true;
+                if (sendButtonText) {
+                    sendButtonText.textContent = 'Sending…';
+                } else {
+                    sendButton.textContent = 'Sending…';
+                }
+                feedbackDiv.innerHTML = '';
+                
+                console.log('Sending notification with data:', formData);
+                
+                const response = await fetch('/admin/fcm-management/api/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                const result = await response.json();
+                console.log('Notification API response:', result);
+                
+                if (result.success) {
+                    // Phase 5.2: Enhanced success message with mode detection
+                    const mode = result.mode || 'unknown';
+                    const isLive = mode === 'live';
+                    
+                    let successHTML = `
+                        <div class="feedback-message feedback-success">
+                            ✅ <strong>Notification ${isLive ? 'Sent' : 'Validated'} Successfully!</strong><br>
+                            📊 ${isLive ? 'Sent to' : 'Would send to'} <strong>${result.targetTokenCount || result.sent || 0}</strong> FCM tokens<br>
+                            🎯 Target Type: <strong>${result.targetType}</strong><br>
+                    `;
+                    
+                    if (isLive) {
+                        successHTML += `🔴 Mode: <strong>LIVE</strong> - Real notifications sent!<br>`;
+                        if (result.sent !== undefined) {
+                            successHTML += `📈 Success: <strong>${result.sent}</strong>, Failed: <strong>${result.failed || 0}</strong><br>`;
+                        }
+                        if (result.cappedByLimit) {
+                            successHTML += `⚠️ <em>Token count was capped to safety limit (${result.maxTokensLimit})</em><br>`;
+                        }
+                    } else {
+                        successHTML += `🧪 Mode: <strong>DRY-RUN</strong> - Not actually sent<br>`;
+                        if (result.cappedByLimit) {
+                            successHTML += `⚠️ <em>Would be capped to safety limit (${result.maxTokensLimit})</em><br>`;
+                        }
+                    }
+                    
+                    successHTML += '</div>';
+                    feedbackDiv.innerHTML = successHTML;
+                    
+                    // Reset form after success
+                    document.getElementById('notificationForm').reset();
+                    clearSelections();
+                    handleTargetTypeChange(); // Hide selection controls
+                    
+                    console.log('✅ Notification form submitted successfully (dry run)');
+                } else {
+                    // Show error message
+                    feedbackDiv.innerHTML = `
+                        <div class="feedback-message feedback-error">
+                            ❌ <strong>Notification Failed</strong><br>
+                            Error: ${result.error || 'Unknown error occurred'}
+                        </div>
+                    `;
+                    console.error('❌ Notification submission failed:', result.error);
+                }
+            } catch (error) {
+                console.error('Network error sending notification:', error);
+                feedbackDiv.innerHTML = `
+                    <div class="feedback-message feedback-error">
+                        ❌ <strong>Network Error</strong><br>
+                        Could not connect to server. Please try again.
+                    </div>
+                `;
+            } finally {
+                // Re-enable button and restore proper text based on FCM mode
+                sendButton.disabled = false;
+                
+                // Determine proper button text based on current FCM mode
+                if (sendButtonText) {
+                    // Get current FCM mode to set proper button text
+                    fetch('/admin/fcm-management/api/stats')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success && data.stats?.system) {
+                                const isLive = data.stats.system.fcmLiveMode === true;
+                                sendButtonText.textContent = isLive ? 'Send Notification (LIVE 🔴)' : 'Send Notification (DRY-RUN 🧪)';
+                            } else {
+                                sendButtonText.textContent = 'Send Notification (DRY-RUN 🧪)'; // Safe fallback
+                            }
+                        })
+                        .catch(() => {
+                            sendButtonText.textContent = 'Send Notification (DRY-RUN 🧪)'; // Safe fallback on error
+                        });
+                } else {
+                    sendButton.textContent = 'Send Notification (DRY-RUN 🧪)'; // Safe fallback
+                }
+            }
+        }
+        
+        // Form submission handler (Enhanced for Phase 5.1)
+        function setupNotificationForm() {
+            const form = document.getElementById('notificationForm');
+            const targetingSelect = document.getElementById('targetingType');
+            
+            if (form) {
+                form.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const targetType = document.getElementById('targetingType').value;
+                    
+                    // Build form data with Phase 5.1 enhancements
+                    const formData = {
+                        title: document.getElementById('notificationTitle').value.trim(),
+                        message: document.getElementById('notificationMessage').value.trim(),
+                        targetType: targetType
+                    };
+                    
+                    // Add specific targets based on selection
+                    if (targetType === 'sellers' && selectedSellers.length > 0) {
+                        formData.targetSellers = selectedSellers.map(s => s.id);
+                    } else if (targetType === 'tokens' && selectedTokens.length > 0) {
+                        formData.targetTokens = selectedTokens.map(t => t.token);
+                    }
+                    
+                    // Enhanced validation
+                    const validation = validateForm();
+                    if (!validation.valid) {
+                        document.getElementById('notificationFeedback').innerHTML = `
+                            <div class="feedback-message feedback-error">
+                                ❌ ${validation.error}
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    // Send notification
+                    await sendNotification(formData);
+                });
+                
+                // Add target type change listener
+                if (targetingSelect) {
+                    targetingSelect.addEventListener('change', handleTargetTypeChange);
+                }
+                
+                console.log('📝 Enhanced notification form event listeners set up');
+            }
+            
+            // Setup dropdown click handlers
+            const sellerHeader = document.getElementById('sellerSelectHeader');
+            const tokenHeader = document.getElementById('tokenSelectHeader');
+            
+            if (sellerHeader) {
+                sellerHeader.addEventListener('click', () => {
+                    toggleDropdown('sellerSelectHeader', 'sellerSelectOptions');
+                });
+            }
+            
+            if (tokenHeader) {
+                tokenHeader.addEventListener('click', () => {
+                    toggleDropdown('tokenSelectHeader', 'tokenSelectOptions');
+                });
+            }
+        }
+        
+        // Enhanced form validation for Phase 5.1
+        function validateForm() {
+            const targetType = document.getElementById('targetingType').value;
+            const title = document.getElementById('notificationTitle').value.trim();
+            const message = document.getElementById('notificationMessage').value.trim();
+            
+            if (!title || !message) {
+                return { valid: false, error: 'Please fill in both title and message' };
+            }
+            
+            if (targetType === 'sellers' && selectedSellers.length === 0) {
+                return { valid: false, error: 'Please select at least one seller' };
+            }
+            
+            if (targetType === 'tokens' && selectedTokens.length === 0) {
+                return { valid: false, error: 'Please select at least one token' };
+            }
+            
+            return { valid: true };
+        }
+        
+        // Load all dashboard components when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('FCM Dashboard - Phase 5.1 loaded successfully');
+            loadFCMStatistics();
+            loadTokens(); // Phase 4.2: Load tokens table
+            loadHistory(); // Phase 4.3: Load notification history
+            setupNotificationForm(); // Phase 5.1: Enhanced notification form
+        });
+        
+        /* ===== AUTO-REFRESH BLOCK ===== */
+        const REFRESH_MS = 30000; // 30 s
+        let refreshInterval;
+        
+        function startRefresh() {
+            refreshInterval = setInterval(() => {
+                loadFCMStatistics();
+                loadTokens();
+                loadHistory();
+                pulseCards(); // visual indicator
+            }, REFRESH_MS);
+        }
+        
+        function pulseCards() {
+            document.querySelectorAll('.card').forEach(card => {
+                card.style.transition = 'box-shadow 0.4s';
+                card.style.boxShadow = '0 0 10px #28a745';
+                setTimeout(() => card.style.boxShadow = '', 400);
+            });
+        }
+        
+        // start on load, pause on blur, resume on focus
+        window.addEventListener('load', startRefresh);
+        window.addEventListener('blur', () => clearInterval(refreshInterval));
+        window.addEventListener('focus', startRefresh);
+        
+        /* ===== COPY-TOKEN BLOCK ===== */
+        function copyToken(fullToken) {
+            navigator.clipboard.writeText(fullToken).then(() => {
+                const toast = document.createElement('div');
+                toast.textContent = 'Token copied!';
+                toast.style.cssText = 'position:fixed;bottom:20px;right:20px;background:#28a745;color:#fff;padding:6px 12px;border-radius:4px;font-size:12px;z-index:9999;transition:opacity 0.3s;';
+                document.body.appendChild(toast);
+                setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 1500);
+            }).catch(() => {
+                alert('Copy failed – please select manually');
+            });
+        }
+    </script>
+</body>
+</html>

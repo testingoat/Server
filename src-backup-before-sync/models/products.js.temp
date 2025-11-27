@@ -1,0 +1,52 @@
+import mongoose from 'mongoose';
+
+const productScehma = new mongoose.Schema({
+  name: { type: String, required: true },
+  image: { type: String, required: true },
+  price: { type: Number, required: true },
+  discountPrice: { type: Number },
+  quantity: { type: String, required: true },
+  category: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Category',
+    required: true,
+  },
+  
+  // NEW FIELDS FOR SELLER SUPPORT (all optional for backwards compatibility)
+  sellerId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Seller',
+    required: false, // Optional - null for admin-created products
+  },
+  sellerName: { 
+    type: String, 
+    required: false, // Store name for quick access
+  },
+  isActive: { 
+    type: Boolean, 
+    default: true, // Seller can activate/deactivate their products
+  },
+  createdBy: { 
+    type: String, 
+    enum: ['admin', 'seller'],
+    default: 'admin', // Track creation source
+  },
+  stock: {
+    type: Number,
+    default: 0, // Seller manages stock levels
+  },
+  description: {
+    type: String,
+    default: '', // Product description
+  },
+}, { 
+  timestamps: true // Adds createdAt and updatedAt
+});
+
+// Index for performance
+productScehma.index({ sellerId: 1, isActive: 1 });
+productScehma.index({ category: 1, isActive: 1 });
+
+const Product = mongoose.model('Product', productScehma);
+
+export default Product;

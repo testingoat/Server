@@ -1,0 +1,273 @@
+import AdminJS from 'adminjs';
+import AdminJSFastify from '@adminjs/fastify';
+import * as AdminJSMongoose from '@adminjs/mongoose';
+import * as Models from '../models/index.js';
+import SellerProduct from '../models/sellerProducts.js';
+import { Monitoring } from '../models/monitoring.js';
+import { dark, light, noSidebar } from '@adminjs/themes';
+
+AdminJS.registerAdapter(AdminJSMongoose);
+
+export const admin = new AdminJS({
+    componentLoader: undefined, // Completely disable component loading
+    pages: {}, // ensure no custom pages mapping exists
+    dashboard: {}, // ensure no dashboard components
+    resources: [
+        {
+            resource: Models.Customer,
+            options: {
+                listProperties: ['phone', 'role', 'isActivated'],
+                filterProperties: ['phone', 'role'],
+            },
+        },
+        {
+            resource: Models.DeliveryPartner,
+            options: {
+                listProperties: ['email', 'role', 'isActivated'],
+                filterProperties: ['email', 'role'],
+            },
+        },
+        {
+            resource: Models.Admin,
+            options: {
+                listProperties: ['email', 'role', 'isActivated'],
+                filterProperties: ['email', 'role'],
+            },
+        },
+        { resource: Models.Branch },
+        { resource: Models.Product },
+        { resource: Models.Category },
+        { resource: Models.Order },
+        { resource: Models.Counter },
+        
+        // Seller Products for Approval Workflow
+        {
+            resource: SellerProduct,
+            options: {
+                navigation: {
+                    name: 'Seller Management',
+                    icon: 'Store'
+                },
+                listProperties: ['name', 'seller', 'category', 'price', 'status', 'createdAt'],
+                filterProperties: ['status', 'seller', 'category'],
+                showProperties: ['name', 'image', 'price', 'discountPrice', 'quantity', 'description', 'stock', 'category', 'seller', 'status', 'rejectionReason', 'createdAt', 'updatedAt'],
+                editProperties: ['status', 'rejectionReason'],
+                actions: {
+                    // Hide create and delete actions
+                    new: { isVisible: false },
+                    delete: { isVisible: false },
+                    
+                    // Custom approve action
+                    approve: {
+                        actionType: 'record',
+                        isVisible: (context) => {
+                            return context.record?.params?.status === 'pending';
+                        },
+                        handler: async (request, response, context) => {
+                            const { record } = context;
+                            if (record) {
+                                await record.update({
+                                    status: 'approved',
+                                    approvedAt: new Date(),
+                                    rejectionReason: undefined
+                                });
+                            }
+                            return {
+                                record: record?.toJSON(),
+                                notice: {
+                                    message: 'Product approved successfully!',
+                                    type: 'success'
+                                }
+                            };
+                        },
+                        component: false,
+                        icon: 'CheckCircle',
+                        label: 'Approve Product'
+                    },
+                    
+                    // Custom reject action
+                    reject: {
+                        actionType: 'record',
+                        isVisible: (context) => {
+                            return context.record?.params?.status === 'pending';
+                        },
+                        handler: async (request, response, context) => {
+                            const { record } = context;
+                            const rejectionReason = request.payload?.rejectionReason || 'Product rejected by admin';
+                            
+                            if (record) {
+                                await record.update({
+                                    status: 'rejected',
+                                    rejectionReason: rejectionReason
+                                });
+                            }
+                            return {
+                                record: record?.toJSON(),
+                                notice: {
+                                    message: 'Product rejected successfully!',
+                                    type: 'success'
+                                }
+                            };
+                        },
+                        component: false,
+                        icon: 'XCircle',
+                        label: 'Reject Product'
+                    }
+                },
+                properties: {
+                    _id: { isVisible: { list: false, filter: false, show: true, edit: false } },
+                    name: { isTitle: true },
+                    image: { 
+                        type: 'string',
+                        isVisible: { list: false, filter: false, show: true, edit: false }
+                    },
+                    seller: {
+                        reference: 'Seller',
+                        isVisible: { list: true, filter: true, show: true, edit: false }
+                    },
+                    category: {
+                        reference: 'Category',
+                        isVisible: { list: true, filter: true, show: true, edit: false }
+                    },
+                    status: {
+                        availableValues: [
+                            { value: 'pending', label: 'Pending' },
+                            { value: 'approved', label: 'Approved' },
+                            { value: 'rejected', label: 'Rejected' }
+                        ],
+                        isVisible: { list: true, filter: true, show: true, edit: true }
+                    },
+                    rejectionReason: {
+                        type: 'textarea',
+                        isVisible: { 
+                            list: false, 
+                            filter: false, 
+                            show: true, 
+                            edit: (context) => context.record?.params?.status === 'rejected'
+                        }
+                    },
+                    price: { type: 'number' },
+                    discountPrice: { type: 'number' },
+                    stock: { type: 'number' },
+                    createdAt: { 
+                        type: 'datetime',
+                        isVisible: { list: true, filter: false, show: true, edit: false }
+                    },
+                    updatedAt: { 
+                        type: 'datetime',
+                        isVisible: { list: false, filter: false, show: true, edit: false }
+                    }
+                }
+            }
+        },
+        
+        {
+            resource: Monitoring,
+            options: {
+                navigation: {
+                    name: 'System',
+                    icon: 'Activity'
+                },
+                actions: {
+                    // Hide all default actions to prevent errors
+                    new: { isVisible: false },
+                    edit: { isVisible: false },
+                    delete: { isVisible: false },
+                    bulkDelete: { isVisible: false },
+                    list: { isVisible: false },
+                    // Custom show action that redirects to monitoring dashboard
+                    show: {
+                        isVisible: true,
+                        handler: async (request, response, context) => {
+                            // Redirect to our working monitoring dashboard
+                            return {
+                                redirectUrl: '/admin/monitoring-dashboard'
+                            };
+                        }
+                    },
+                    // Add a custom action for easy access
+                    'openDashboard': {
+                        actionType: 'resource',
+                        isVisible: true,
+                        icon: 'Activity',
+                        label: 'Open Monitoring Dashboard',
+                        handler: async (request, response, context) => {
+                            return {
+                                redirectUrl: '/admin/monitoring-dashboard'
+                            };
+                        }
+                    }
+                },
+                properties: {
+                    name: { isVisible: true },
+                    description: { isVisible: true },
+                    status: { isVisible: true }
+                }
+            }
+        },
+    ],
+    branding: {
+        companyName: 'GoatGoat Admin',
+        withMadeWithLove: false,
+        logo: false,
+        favicon: '/favicon.ico',
+    },
+    locale: {
+        language: 'en',
+        availableLanguages: ['en'],
+        translations: {
+            en: {
+                labels: {
+                    Customer: 'Customer',
+                    DeliveryPartner: 'Delivery Partner',
+                    Admin: 'Admin',
+                    Branch: 'Branch',
+                    Product: 'Product',
+                    Category: 'Category',
+                    Order: 'Order',
+                    Counter: 'Counter',
+                    SellerProduct: 'Seller Products',
+                    GoatgoatStaging: 'GoatGoat',
+                    Monitoring: 'Monitoring'
+                },
+                properties: {
+                    name: 'Name',
+                    _id: 'ID',
+                    description: 'Description',
+                    lastUpdated: 'Last Updated',
+                    status: 'Status',
+                    createdAt: 'Created At',
+                    updatedAt: 'Updated At',
+                    seller: 'Seller',
+                    category: 'Category',
+                    price: 'Price',
+                    discountPrice: 'Discount Price',
+                    quantity: 'Quantity',
+                    stock: 'Stock',
+                    rejectionReason: 'Rejection Reason'
+                }
+            }
+        }
+    },
+    defaultTheme: dark.id,
+    availableThemes: [dark, light, noSidebar],
+    rootPath: '/admin',
+    // Prevent AdminJS from attempting to bundle user components
+    assetsCDN: false,
+});
+
+export const buildAdminRouter = async (app) => {
+    console.log(' Building AdminJS router...');
+    console.log(' Environment:', process.env.NODE_ENV);
+    console.log(' ULTIMATE FIX: Using minimal AdminJS router without any authentication or session management...');
+    
+    try {
+        // Use the simplest possible AdminJS setup - no authentication, no sessions, no cookies
+        await AdminJSFastify.buildRouter(admin, app);
+        console.log(' AdminJS minimal router built successfully - admin panel accessible at /admin');
+    } catch (error) {
+        console.log(' AdminJS buildRouter failed, error:', error.message);
+        console.log(' This is likely due to plugin conflicts. The server will continue without AdminJS.');
+        // Don't throw - let the server continue without AdminJS
+    }
+};

@@ -1,0 +1,195 @@
+// import {
+    loginSeller,
+    verifySellerOTP,
+    resendSellerOTP,
+    registerSeller,
+    refreshSellerToken,
+    logoutSeller
+// } from '../controllers/auth/sellerAuth.js';
+// import {
+//     getSellerProducts,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    toggleProductStatus,
+    getCategories
+// } from '../controllers/seller/sellerProduct.js';
+// import { verifyToken } from '../middleware/auth.js';
+
+export const sellerRoutes = async (fastify, options) => {
+    console.log('Registering seller routes');
+    
+    // Authentication routes (no auth required)
+    console.log('Registering /seller/login');
+    fastify.post('/seller/login', loginSeller);
+    
+    console.log('Registering /seller/verify-otp');
+    fastify.post('/seller/verify-otp', verifySellerOTP);
+    
+    console.log('Registering /seller/resend-otp');
+    fastify.post('/seller/resend-otp', resendSellerOTP);
+    
+    console.log('Registering /seller/refresh-token');
+    fastify.post('/seller/refresh-token', refreshSellerToken);
+
+    // Protected routes (auth required)
+    console.log('Registering /seller/register');
+    fastify.post('/seller/register', { preHandler: [verifyToken] }, registerSeller);
+    
+    console.log('Registering /seller/logout');
+    fastify.post('/seller/logout', { preHandler: [verifyToken] }, logoutSeller);
+    
+    // FCM Token endpoint
+    console.log('Registering /seller/fcm-token');
+    fastify.put('/seller/fcm-token', { preHandler: [verifyToken] }, async (req, reply) => {
+        try {
+            const { userId, role } = req.user;
+            const { fcmToken, platform, deviceInfo } = req.body;
+            
+            if (role !== 'Seller') {
+                return reply.status(403).send({
+                    success: false,
+                    message: 'Access denied. Seller role required.'
+                });
+            }
+
+            if (!fcmToken) {
+                return reply.status(400).send({
+                    success: false,
+                    message: 'FCM token is required'
+                });
+            }
+
+            const { Seller } = await import('../models/user.js');
+            const seller = await Seller.findById(userId);
+            
+            if (!seller) {
+                return reply.status(404).send({
+                    success: false,
+                    message: 'Seller not found'
+                });
+            }
+
+            // Initialize fcmTokens array if it doesn't exist
+            if (!seller.fcmTokens) {
+                seller.fcmTokens = [];
+            }
+
+            // Check if token already exists
+            const existingTokenIndex = seller.fcmTokens.findIndex(token => token.token === fcmToken);
+            
+            if (existingTokenIndex !== -1) {
+                // Update existing token
+                seller.fcmTokens[existingTokenIndex] = {
+                    token: fcmToken,
+                    platform: platform || 'android',
+                    deviceInfo: deviceInfo || {},
+                    updatedAt: new Date()
+                };
+            } else {
+                // Add new token
+                seller.fcmTokens.push({
+                    token: fcmToken,
+                    platform: platform || 'android',
+                    deviceInfo: deviceInfo || {},
+                    createdAt: new Date(),
+                    updatedAt: new Date()
+                });
+            }
+
+            await seller.save();
+
+            console.log(" FCM token registered for seller:, userId);
+
+            return reply.send({
+                success: true,
+                message: 'FCM token registered successfully',
+                data: {
+                    tokenCount: seller.fcmTokens.length
+                }
+            });
+            
+        } catch (error) {
+            console.error('FCM Token Registration Error:', error);
+            return reply.status(500).send({
+                success: false,
+                message: 'Failed to register FCM token'
+            });
+        }
+    });
+
+    // Product Management Routes
+    console.log('Registering seller product routes');
+    
+    // Get all products for the seller
+//     fastify.get('/seller/products', { preHandler: [verifyToken] }, getSellerProducts);
+    
+    // Create new product
+    fastify.post('/seller/products', { preHandler: [verifyToken] }, createProduct);
+    
+    // Update product
+    fastify.put('/seller/products/:id', { preHandler: [verifyToken] }, updateProduct);
+    
+    // Delete product  
+    fastify.delete('/seller/products/:id', { preHandler: [verifyToken] }, deleteProduct);
+    
+    // Toggle product status
+    fastify.put('/seller/products/:id/status', { preHandler: [verifyToken] }, toggleProductStatus);
+    
+    // Get categories for product creation
+    fastify.get('/seller/categories', { preHandler: [verifyToken] }, getCategories);
+    
+    // Profile routes (for future use)
+    console.log('Registering /seller/profile');
+    fastify.get('/seller/profile', { preHandler: [verifyToken] }, async (req, reply) => {
+        try {
+            const { userId, role } = req.user;
+            
+            if (role !== 'Seller') {
+                return reply.status(403).send({
+                    success: false,
+                    message: 'Access denied. Seller role required.'
+                });
+            }
+
+            const { Seller } = await import('../models/user.js');
+            const seller = await Seller.findById(userId);
+            
+            if (!seller) {
+                return reply.status(404).send({
+                    success: false,
+                    message: 'Seller not found'
+                });
+            }
+
+            return reply.send({
+                success: true,
+                message: 'Seller profile retrieved successfully',
+                user: {
+                    id: seller._id,
+                    name: seller.name,
+                    phone: seller.phone,
+                    email: seller.email,
+                    role: seller.role,
+                    storeName: seller.storeName,
+                    storeAddress: seller.storeAddress,
+                    businessHours: seller.businessHours,
+                    deliveryAreas: seller.deliveryAreas,
+                    isVerified: seller.isVerified,
+                    profileCompleted: seller.profileCompleted,
+                    createdAt: seller.createdAt,
+                    updatedAt: seller.updatedAt
+                }
+            });
+            
+        } catch (error) {
+            console.error('Get Seller Profile Error:', error);
+            return reply.status(500).send({
+                success: false,
+                message: 'Failed to retrieve seller profile'
+            });
+        }
+    });
+    
+    console.log('Seller routes registered successfully');
+};

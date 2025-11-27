@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: grocery-backend
+    env: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install --legacy-peer-deps
+    startCommand: node app.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        value: mongodb+srv://testingoat24:Qwe_2897@cluster6.l5jkmi9.mongodb.net/Goatgoat?retryWrites=true&w=majority&appName=Cluster6
+      - key: COOKIE_PASSWORD
+        value: sieL67H7GbkzJ4XCoH0IHcmO1hGBSiG6
+      - key: ACCESS_TOKEN_SECRET
+        value: rsa_encrypted_secret
+      - key: REFRESH_TOKEN_SECRET
+        value: rsa_encrypted_refresh_secret

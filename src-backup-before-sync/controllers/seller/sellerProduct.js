@@ -1,0 +1,281 @@
+import Product from '../../models/products.js';
+import Category from '../../models/category.js';
+
+// Get all products for the authenticated seller
+export const getSellerProducts = async (request, reply) => {
+  try {
+    const sellerId = request.user.userId;
+    console.log(' Getting products for seller:', sellerId);
+
+    const products = await Product.find({ seller: sellerId })
+      .populate('category', 'name image')
+      .sort({ createdAt: -1 });
+
+    console.log(' Found', products.length, 'products for seller');
+
+    return reply.code(200).send({
+      success: true,
+      data: products,
+      message: 'Products retrieved successfully'
+    });
+  } catch (error) {
+    console.error(' Error getting seller products:', error);
+    return reply.code(500).send({
+      success: false,
+      message: 'Failed to retrieve products'
+    });
+  }
+};
+
+// Create a new product (will be pending approval)
+export const createProduct = async (request, reply) => {
+  try {
+    const sellerId = request.user.userId;
+    const { name, price, discountPrice, quantity, category, description, stock, image } = request.body;
+
+    console.log(' Creating new product for seller:', sellerId);
+    console.log(' Product data:', { name, price, category });
+
+    // Validate required fields
+    if (!name || !price || !quantity || !category) {
+      return reply.code(400).send({
+        success: false,
+        message: 'Missing required fields: name, price, quantity, category'
+      });
+    }
+
+    // Verify category exists
+    const categoryExists = await Category.findById(category);
+    if (!categoryExists) {
+      return reply.code(400).send({
+        success: false,
+        message: 'Invalid category ID'
+      });
+    }
+
+    // Create product with pending status
+    const productData = {
+      name,
+      price: Number(price),
+      discountPrice: discountPrice ? Number(discountPrice) : undefined,
+      quantity,
+      category,
+      description,
+      stock: stock ? Number(stock) : 0,
+      image: image || 'https://via.placeholder.com/300x300?text=Product+Image',
+      seller: sellerId,
+      status: 'pending' // All seller products start as pending
+    };
+
+    const product = new Product(productData);
+    await product.save();
+
+    // Populate category for response
+    await product.populate('category', 'name image');
+
+    console.log(' Product created successfully:', product._id);
+
+    return reply.code(201).send({
+      success: true,
+      data: product,
+      message: 'Product created successfully and is pending approval'
+    });
+  } catch (error) {
+    console.error(' Error creating product:', error);
+    return reply.code(500).send({
+      success: false,
+      message: 'Failed to create product'
+    });
+  }
+};
+
+// Update an existing product (only if pending or rejected)
+export const updateProduct = async (request, reply) => {
+  try {
+    const sellerId = request.user.userId;
+    const productId = request.params.id;
+    const updateData = request.body;
+
+    console.log(' Updating product:', productId, 'for seller:', sellerId);
+
+    // Find product and verify ownership
+    const product = await Product.findOne({ _id: productId, seller: sellerId });
+    if (!product) {
+      return reply.code(404).send({
+        success: false,
+        message: 'Product not found or access denied'
+      });
+    }
+
+    // Only allow updates if product is pending or rejected
+    if (product.status === 'approved') {
+      return reply.code(400).send({
+        success: false,
+        message: 'Cannot update approved products. Please contact admin.'
+      });
+    }
+
+    // Validate category if provided
+    if (updateData.category) {
+      const categoryExists = await Category.findById(updateData.category);
+      if (!categoryExists) {
+        return reply.code(400).send({
+          success: false,
+          message: 'Invalid category ID'
+        });
+      }
+    }
+
+    // Prepare update data
+    const allowedUpdates = ['name', 'price', 'discountPrice', 'quantity', 'description', 'stock', 'image', 'category'];
+    const filteredUpdates = {};
+    
+    allowedUpdates.forEach(field => {
+      if (updateData[field] !== undefined) {
+        filteredUpdates[field] = updateData[field];
+      }
+    });
+
+    // Convert numeric fields
+    if (filteredUpdates.price) filteredUpdates.price = Number(filteredUpdates.price);
+    if (filteredUpdates.discountPrice) filteredUpdates.discountPrice = Number(filteredUpdates.discountPrice);
+    if (filteredUpdates.stock) filteredUpdates.stock = Number(filteredUpdates.stock);
+
+    // Reset status to pending if product was rejected and is being updated
+    if (product.status === 'rejected') {
+      filteredUpdates.status = 'pending';
+      filteredUpdates.rejectionReason = undefined;
+    }
+
+    // Update product
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      filteredUpdates,
+      { new: true, runValidators: true }
+    ).populate('category', 'name image');
+
+    console.log(' Product updated successfully');
+
+    return reply.code(200).send({
+      success: true,
+      data: updatedProduct,
+      message: 'Product updated successfully'
+    });
+  } catch (error) {
+    console.error(' Error updating product:', error);
+    return reply.code(500).send({
+      success: false,
+      message: 'Failed to update product'
+    });
+  }
+};
+
+// Delete a product (only if pending or rejected)
+export const deleteProduct = async (request, reply) => {
+  try {
+    const sellerId = request.user.userId;
+    const productId = request.params.id;
+
+    console.log(' Deleting product:', productId, 'for seller:', sellerId);
+
+    // Find product and verify ownership
+    const product = await Product.findOne({ _id: productId, seller: sellerId });
+    if (!product) {
+      return reply.code(404).send({
+        success: false,
+        message: 'Product not found or access denied'
+      });
+    }
+
+    // Only allow deletion if product is pending or rejected
+    if (product.status === 'approved') {
+      return reply.code(400).send({
+        success: false,
+        message: 'Cannot delete approved products. Please contact admin.'
+      });
+    }
+
+    await Product.findByIdAndDelete(productId);
+
+    console.log(' Product deleted successfully');
+
+    return reply.code(200).send({
+      success: true,
+      message: 'Product deleted successfully'
+    });
+  } catch (error) {
+    console.error(' Error deleting product:', error);
+    return reply.code(500).send({
+      success: false,
+      message: 'Failed to delete product'
+    });
+  }
+};
+
+// Toggle product active status (only for approved products)
+export const toggleProductStatus = async (request, reply) => {
+  try {
+    const sellerId = request.user.userId;
+    const productId = request.params.id;
+
+    console.log(' Toggling product status:', productId);
+
+    // Find product and verify ownership
+    const product = await Product.findOne({ _id: productId, seller: sellerId });
+    if (!product) {
+      return reply.code(404).send({
+        success: false,
+        message: 'Product not found or access denied'
+      });
+    }
+
+    // Only allow status toggle for approved products
+    if (product.status !== 'approved') {
+      return reply.code(400).send({
+        success: false,
+        message: 'Can only toggle status of approved products'
+      });
+    }
+
+    // Toggle active status
+    product.isActive = !product.isActive;
+    await product.save();
+
+    console.log(' Product status toggled to:', product.isActive ? 'active' : 'inactive');
+
+    return reply.code(200).send({
+      success: true,
+      data: { isActive: product.isActive },
+      message: 'Product status updated successfully'
+    });
+  } catch (error) {
+    console.error(' Error toggling product status:', error);
+    return reply.code(500).send({
+      success: false,
+      message: 'Failed to toggle product status'
+    });
+  }
+};
+
+// Get categories for product creation
+export const getCategories = async (request, reply) => {
+  try {
+    console.log(' Getting categories for product creation');
+
+    const categories = await Category.find({}).sort({ name: 1 });
+
+    console.log(' Found', categories.length, 'categories');
+
+    return reply.code(200).send({
+      success: true,
+      data: categories,
+      message: 'Categories retrieved successfully'
+    });
+  } catch (error) {
+    console.error(' Error getting categories:', error);
+    return reply.code(500).send({
+      success: false,
+      message: 'Failed to retrieve categories'
+    });
+  }
+};
