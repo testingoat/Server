@@ -5,6 +5,7 @@ import { usersRoutes } from './users.js';
 import { sellerRoutes } from './seller.js';
 import notificationRoutes from './notifications.js';
 import adminOpsRoutes from '../api/routes/admin/ops.js';
+import { adminFcmRoutes, apiFcmRoutes } from '../features/fcm-dashboard/routes.js';
 const prefix = '/api';
 export const registerRoutes = async (fastify) => {
     console.log('Registering routes with prefix:', prefix);
@@ -33,6 +34,11 @@ export const registerRoutes = async (fastify) => {
         console.log('Registering admin routes...');
         await fastify.register(adminOpsRoutes, { prefix: '/admin' });
         console.log('Admin routes registered');
+
+        console.log('Registering FCM dashboard routes...');
+        await fastify.register(adminFcmRoutes, { prefix: '/admin' }); // /admin/fcm-management
+        await fastify.register(apiFcmRoutes, { prefix: '/api/fcm' }); // /api/fcm/send-to-*
+        console.log('FCM dashboard routes registered');
         console.log('All routes registered successfully');
     }
     catch (error) {
