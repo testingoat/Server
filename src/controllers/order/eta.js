@@ -56,7 +56,7 @@ export const estimateEtaForLocation = async (req, reply) => {
       });
     }
 
-    const [branches, etaConfig] = await Promise.all([
+    const [branches, etaConfigRaw] = await Promise.all([
       Branch.find({
         isActive: { $ne: false },
         'location.latitude': { $ne: null, $exists: true },
@@ -65,12 +65,17 @@ export const estimateEtaForLocation = async (req, reply) => {
       DeliveryEtaConfig.getActiveConfig(),
     ]);
 
-    if (!etaConfig) {
-      return reply.status(500).send({
-        success: false,
-        reason: 'ETA_CONFIG_MISSING',
-        message: 'No active ETA configuration found',
-      });
+    const etaConfig = etaConfigRaw || {
+      defaultPrepTimeMin: 12,
+      defaultAverageSpeedKmph: 25,
+      defaultServiceRadiusKm: 5,
+    };
+
+    if (!etaConfigRaw) {
+      console.warn(
+        'No active ETA configuration found; using fallback defaults:',
+        etaConfig
+      );
     }
 
     if (!branches.length) {
@@ -165,4 +170,3 @@ export const estimateEtaForLocation = async (req, reply) => {
     });
   }
 };
-
