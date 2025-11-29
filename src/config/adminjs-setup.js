@@ -224,7 +224,25 @@ export const admin = new AdminJS({
                 navigation: {
                     name: 'Store Management',
                     icon: 'MapPin'
-                }
+                },
+                listProperties: ['name', 'seller', 'address', 'location.latitude', 'location.longitude', 'isActive', 'serviceRadiusKm', 'prepTimeMin', 'averageSpeedKmph'],
+                editProperties: ['name', 'seller', 'address', 'location.latitude', 'location.longitude', 'isActive', 'serviceRadiusKm', 'prepTimeMin', 'averageSpeedKmph'],
+                showProperties: ['name', 'seller', 'address', 'location.latitude', 'location.longitude', 'isActive', 'serviceRadiusKm', 'prepTimeMin', 'averageSpeedKmph', 'createdAt', 'updatedAt'],
+                filterProperties: ['name', 'seller', 'isActive'],
+            }
+        },
+        // Delivery ETA Configuration
+        {
+            resource: Models.DeliveryEtaConfig,
+            options: {
+                navigation: {
+                    name: 'Store Management',
+                    icon: 'Timer'
+                },
+                listProperties: ['defaultPrepTimeMin', 'defaultAverageSpeedKmph', 'defaultServiceRadiusKm', 'isActive', 'createdBy', 'createdAt'],
+                editProperties: ['defaultPrepTimeMin', 'defaultAverageSpeedKmph', 'defaultServiceRadiusKm', 'isActive', 'createdBy'],
+                showProperties: ['defaultPrepTimeMin', 'defaultAverageSpeedKmph', 'defaultServiceRadiusKm', 'isActive', 'createdBy', 'createdAt', 'updatedAt'],
+                filterProperties: ['isActive', 'createdBy']
             }
         },
         // Product Management (Approved Products)

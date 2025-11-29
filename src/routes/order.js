@@ -1,4 +1,5 @@
 import { confirmOrder, createOrder, getOrderById, getOrders, updateOrderStatus, } from '../controllers/order/order.js';
+import { estimateEtaForLocation } from '../controllers/order/eta.js';
 import { verifyToken } from '../middleware/auth.js';
 export const orderRoutes = async (fastify, options) => {
     fastify.addHook('preHandler', async (request, reply) => {
@@ -12,4 +13,5 @@ export const orderRoutes = async (fastify, options) => {
     fastify.patch('/order/:orderId/status', updateOrderStatus);
     fastify.post('/order/:orderId/confirm', confirmOrder);
     fastify.get('/order/:orderId', getOrderById);
+    fastify.get('/delivery/estimate-for-location', estimateEtaForLocation);
 };

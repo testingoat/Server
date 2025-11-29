@@ -466,3 +466,37 @@ After thorough review and exploration of the codebase, five critical issues were
 
 ### Timestamp
 - 2025-11-27
+
+## [2025-11-29] Nginx & File Browser Installation on Staging
+
+### Problem
+- Need to securely access files on the staging server (`srv1007003`) via a web interface.
+- Direct access to the server is restricted.
+- Need to ensure secure access with authentication.
+
+### Solution
+1. **File Browser Installation**:
+   - Installed `filebrowser` binary.
+   - Configured to run as `deploy` user on `localhost:8080`.
+   - Created systemd service `filebrowser.service`.
+   - **Fix**: Initial login failed due to `$` in password causing shell expansion issues. Reset password to a safe string.
+
+2. **Nginx Reverse Proxy**:
+   - Configured Nginx to proxy `https://files.goatgoat.tech` to `http://127.0.0.1:8080`.
+   - **Security**:
+     - Implemented **Basic Auth** (Layer 1) at Nginx level.
+     - Implemented **Application Auth** (Layer 2) at File Browser level.
+     - Configured SSL with Let's Encrypt (Certbot).
+
+3. **Verification Issues & Fixes**:
+   - **Issue**: `curl` to `files.goatgoat.tech` returned 404.
+   - **Root Cause**: File Browser returns 404 for `HEAD` requests (used by `curl -I`).
+   - **Fix**: Verified with `GET` requests which returned 200 OK.
+
+### Artifacts
+- `nginx.conf`: Nginx configuration file.
+- `walkthrough.md` / `walkthrough.pdf`: Detailed documentation with credentials and limitations.
+
+### Timestamp
+- 2025-11-29
+

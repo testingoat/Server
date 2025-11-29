@@ -17,6 +17,23 @@ const branchSchema = new mongoose.Schema({
             ref: 'DeliveryPartner',
         },
     ],
-});
+    isActive: {
+        type: Boolean,
+        default: true,
+        index: true,
+    },
+    serviceRadiusKm: {
+        type: Number,
+        min: 0,
+    },
+    prepTimeMin: {
+        type: Number,
+        min: 0,
+    },
+    averageSpeedKmph: {
+        type: Number,
+        min: 1,
+    },
+}, { timestamps: true });
 const Branch = mongoose.model('Branch', branchSchema);
 export default Branch;
