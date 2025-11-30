@@ -90,7 +90,7 @@ export const searchSuggest = async (req, reply) => {
             name: searchRegex,
             isActive: true,
         })
-            .select('_id name image soldCount') // Select fields we need
+            .select('_id name image price discountPrice quantity soldCount') // Include pricing fields
             .limit(20)
             .lean();
 
@@ -111,6 +111,9 @@ export const searchSuggest = async (req, reply) => {
             name: p.name,
             image: p.image || '',
             soldCount: p.soldCount || 0, // Fallback as field might be missing
+            price: p.price,
+            discountPrice: p.discountPrice,
+            quantity: p.quantity,
             typoCorrected
         }));
 
