@@ -500,3 +500,34 @@ After thorough review and exploration of the codebase, five critical issues were
 ### Timestamp
 - 2025-11-29
 
+## [2025-11-30] Search Bar Enhancement Implementation
+
+### Task
+Implement a READ-ONLY search suggestion endpoint `/search/v1/suggest` with fuzzy search, typo correction, and rate limiting.
+
+### Implementation Details
+1. **Models**:
+   - Added `name` index to `Product` and `Category` models for efficient text search.
+   - **File**: `src/models/products.js`, `src/models/category.js`
+
+2. **Controller (`src/controllers/search/searchSuggest.js`)**:
+   - **Fuzzy Search**: Implemented using MongoDB `RegExp` (case-insensitive).
+   - **Typo Correction**: Added a dictionary-based map (e.g., "maggie" -> "maggi") to auto-correct common typos.
+   - **Rate Limiting**: Implemented in-memory rate limiting (10 requests per 5 seconds per IP) to prevent abuse.
+   - **Validation**: Added checks for query length (< 2 chars returns empty) and input type.
+   - **Response**: Standardized JSON response with `results`, `typoCorrected` flag, and query details.
+
+3. **Routes (`src/routes/search.js`, `src/routes/index.js`)**:
+   - Registered the new route with an empty prefix to expose it at `/search/v1/suggest` (bypassing the global `/api` prefix).
+
+### Verification
+- Verified using `curl` for:
+  - Normal queries (status 200).
+  - Typo correction (status 200, `typoCorrected: true`).
+  - Short queries (status 200, empty results).
+  - Rate limiting (status 429 after limit exceeded).
+
+### Timestamp
+- 2025-11-30
+
+
