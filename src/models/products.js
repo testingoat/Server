@@ -36,5 +36,6 @@ const productSchema = new mongoose.Schema({
 productSchema.index({ seller: 1, status: 1 });
 productSchema.index({ status: 1 });
 productSchema.index({ category: 1, status: 1 });
+productSchema.index({ name: 1 }); // Index for text-like search
 const Product = mongoose.model('Product', productSchema);
 export default Product;

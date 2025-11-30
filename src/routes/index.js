@@ -6,10 +6,15 @@ import { sellerRoutes } from './seller.js';
 import notificationRoutes from './notifications.js';
 import adminOpsRoutes from '../api/routes/admin/ops.js';
 import { adminFcmRoutes, apiFcmRoutes } from '../features/fcm-dashboard/routes.js';
+import { searchRoutes } from './search.js';
 const prefix = '/api';
 export const registerRoutes = async (fastify) => {
     console.log('Registering routes with prefix:', prefix);
     try {
+        console.log('Registering search routes...');
+        await fastify.register(searchRoutes, { prefix: '' });
+        console.log('Search routes registered');
+
         console.log('Registering auth routes...');
         await fastify.register(authRoutes, { prefix: prefix });
         console.log('Auth routes registered');
