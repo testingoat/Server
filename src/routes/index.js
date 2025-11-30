@@ -12,7 +12,7 @@ export const registerRoutes = async (fastify) => {
     console.log('Registering routes with prefix:', prefix);
     try {
         console.log('Registering search routes...');
-        await fastify.register(searchRoutes, { prefix: '' });
+        await fastify.register(searchRoutes, { prefix }); // NOTE: using prefix here
         console.log('Search routes registered');
 
         console.log('Registering auth routes...');
