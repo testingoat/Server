@@ -84,11 +84,11 @@ export const searchSuggest = async (req, reply) => {
         // 4. Query Data Sources
         const searchRegex = new RegExp(correctedQuery, 'i');
 
-        // Products: Active and Approved
+        // Products: require active flag only, to match visible catalog
+        // Status is intentionally not filtered here to align with category listing
         const productPromise = Product.find({
             name: searchRegex,
-            status: 'approved',
-            isActive: true
+            isActive: true,
         })
             .select('_id name image soldCount') // Select fields we need
             .limit(20)
