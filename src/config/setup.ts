@@ -441,6 +441,41 @@ export const admin = new AdminJS({
                 }
             }
         },
+        // Delivery ETA Configuration
+        {
+            resource: Models.DeliveryEtaConfig,
+            options: {
+                navigation: {
+                    name: 'Store Management',
+                    icon: 'Timer',
+                },
+                listProperties: [
+                    'defaultPrepTimeMin',
+                    'defaultAverageSpeedKmph',
+                    'defaultServiceRadiusKm',
+                    'isActive',
+                    'createdBy',
+                    'createdAt',
+                ],
+                editProperties: [
+                    'defaultPrepTimeMin',
+                    'defaultAverageSpeedKmph',
+                    'defaultServiceRadiusKm',
+                    'isActive',
+                    'createdBy',
+                ],
+                showProperties: [
+                    'defaultPrepTimeMin',
+                    'defaultAverageSpeedKmph',
+                    'defaultServiceRadiusKm',
+                    'isActive',
+                    'createdBy',
+                    'createdAt',
+                    'updatedAt',
+                ],
+                filterProperties: ['isActive', 'createdBy'],
+            }
+        },
         // Product Management (Approved Products)
         {
             resource: Models.Product,
