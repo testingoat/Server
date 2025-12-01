@@ -106,15 +106,31 @@ export async function getFCMManagementDashboard(request, reply) {
             }
         });
 
-        // 3. Fetch Notification History
-        let notifications = [];
+        // 3. Fetch Notification History (NotificationLog - unified for customers/sellers/delivery)
+        let historyLogs = [];
         try {
-            notifications = await Notification.find()
+            historyLogs = await NotificationLog.find()
                 .sort({ createdAt: -1 })
                 .limit(50)
-                .populate('sellerId', 'storeName')
                 .lean();
-        } catch (e) { console.log('Error fetching notifications:', e); }
+        } catch (e) {
+            console.log('Error fetching notification history:', e);
+        }
+
+        const historyRows = historyLogs.map((log, index) => {
+            const payload = log.payload || {};
+            const data = payload.data || {};
+            const type = (data.type || 'system').toString().toUpperCase();
+            return {
+                createdAt: log.createdAt,
+                title: payload.title || 'Notification',
+                message: payload.body || '',
+                type,
+                target: log.targeting || 'unknown',
+                status: log.status || 'unknown',
+                index
+            };
+        });
 
 
         const html = `<!DOCTYPE html>
@@ -611,22 +627,30 @@ export async function getFCMManagementDashboard(request, reply) {
                             <th>Title</th>
                             <th>Message</th>
                             <th>Type</th>
-                            <th>Target (Seller)</th>
+                            <th>Target</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${notifications.map((n, index) => `
-                        <tr style="animation: fadeIn 0.3s ease-out backwards; animation-delay: ${0.1 + (index * 0.02)}s">
+                        ${historyRows.map((n) => `
+                        <tr style="animation: fadeIn 0.3s ease-out backwards; animation-delay: ${0.1 + (n.index * 0.02)}s">
                             <td>${new Date(n.createdAt).toLocaleString()}</td>
                             <td style="font-weight: 500;">${n.title}</td>
                             <td style="color: var(--text-muted);">${n.message}</td>
                             <td><span class="badge badge-unknown">${n.type}</span></td>
-                            <td>${n.sellerId ? n.sellerId.storeName : 'Unknown'}</td>
-                            <td>${n.isRead ? '<span class="badge badge-success">Read</span>' : '<span class="badge badge-unknown">Unread</span>'}</td>
+                            <td>${n.target}</td>
+                            <td>
+                                ${n.status === 'success'
+                                  ? '<span class="badge badge-success">Sent</span>'
+                                  : n.status === 'partial'
+                                    ? '<span class="badge badge-warning">Partial</span>'
+                                    : '<span class="badge badge-unknown">' + n.status + '</span>'}
+                            </td>
                         </tr>
                         `).join('')}
-                         ${notifications.length === 0 ? '<tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">No history found</td></tr>' : ''}
+                        ${historyRows.length === 0
+                          ? '<tr><td colspan="6" style="text-align:center; padding: 30px; color: var(--text-muted);">No history found</td></tr>'
+                          : ''}
                     </tbody>
                 </table>
             </div>
