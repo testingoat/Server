@@ -1410,7 +1410,7 @@ export async function sendDashboardNotification(request, reply) {
         }
 
         reply.send({
-            success: true,
+            success: successCount > 0,
             message: `Sent to ${successCount}/${tokens.length} recipients`,
             details: {
                 successCount,

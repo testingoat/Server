@@ -29,8 +29,11 @@ export const sendPushNotification = async (fcmToken, payload) => {
         return { success: true, messageId: response };
     }
     catch (error) {
-        console.error('❌ Failed to send push notification:', error);
-        return { success: false, error: error.message };
+        console.error('❌ Failed to send push notification:', {
+            message: error?.message,
+            code: error?.code,
+        });
+        return { success: false, error: error.message, code: error.code };
     }
 };
 /**
@@ -59,8 +62,16 @@ export const sendBulkPushNotifications = async (fcmTokens, payload) => {
         };
         const response = await admin.messaging().sendEachForMulticast(message);
         console.log(`✅ Bulk notifications sent: ${response.successCount}/${fcmTokens.length}`);
+
+        if (response.failureCount > 0) {
+            const errorSummaries = response.responses
+                .map((r, idx) => r.error ? { index: idx, code: r.error.code, message: r.error.message } : null)
+                .filter(Boolean);
+            console.warn('⚠️ FCM bulk send failures:', errorSummaries.slice(0, 5));
+        }
+
         return {
-            success: true,
+            success: response.failureCount === 0,
             successCount: response.successCount,
             failureCount: response.failureCount,
             results: response.responses,
