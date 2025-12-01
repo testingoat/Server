@@ -1305,7 +1305,7 @@ export async function getDashboardHistory(request, reply) {
         const limit = Math.min(50, Math.max(1, parseInt(request.query?.limit, 10) || 10));
         const skip = (page - 1) * limit;
 
-        const [notifications, total] = await Promise.all([
+        const [logs, total] = await Promise.all([
             NotificationLog.find({})
                 .sort({ createdAt: -1 })
                 .skip(skip)
@@ -1314,6 +1314,15 @@ export async function getDashboardHistory(request, reply) {
                 .lean(),
             NotificationLog.countDocuments()
         ]);
+
+        const notifications = logs.map(log => ({
+            title: log.payload?.title || '',
+            message: log.payload?.body || '',
+            target: log.targeting || '',
+            // Map internal status values to the simple states expected by the dashboard UI
+            status: log.status === 'success' ? 'sent' : (log.status || 'unknown'),
+            createdAt: log.createdAt,
+        }));
 
         reply.send({
             success: true,
