@@ -18,6 +18,15 @@ const customerSchema = new mongoose.Schema({
     ...userSchema.obj,
     phone: { type: Number, required: true, unique: true },
     role: { type: String, enum: ["Customer"], default: "Customer" },
+    fcmToken: { type: String },
+    fcmTokenUpdatedAt: { type: Date },
+    fcmTokens: [{
+        token: { type: String, required: true },
+        platform: { type: String, enum: ['android', 'ios'], default: 'android' },
+        deviceInfo: { type: mongoose.Schema.Types.Mixed },
+        createdAt: { type: Date, default: Date.now },
+        updatedAt: { type: Date, default: Date.now }
+    }],
     liveLocation: {
         latitude: { type: Number },
         longitude: { type: Number },
@@ -59,6 +68,8 @@ const deliveryPartnerSchema = new mongoose.Schema({
     bankAccountNumber: { type: String },
     ifscCode: { type: String },
     bankName: { type: String },
+    fcmToken: { type: String },
+    fcmTokenUpdatedAt: { type: Date },
     emergencyContact: {
         name: { type: String },
         phone: { type: String },
@@ -107,6 +118,8 @@ const sellerSchema = new mongoose.Schema({
     deliveryAreas: [{ type: String }],
     isVerified: { type: Boolean, default: false },
     profileCompleted: { type: Boolean, default: false },
+    fcmToken: { type: String },
+    fcmTokenUpdatedAt: { type: Date },
     fcmTokens: [{
         token: { type: String, required: true },
         platform: { type: String, enum: ['android', 'ios'], default: 'android' },
@@ -173,5 +186,4 @@ export const DeliveryPartner = mongoose.model(
 );
 export const Admin = mongoose.model("Admin", adminSchema);
 export const Seller = mongoose.model('Seller', sellerSchema);
-
 

@@ -7,6 +7,8 @@ import Counter from "./counter.js";
 import Notification from "./notification.js";
 import DeliveryFeeConfig from "./deliveryFeeConfig.js";
 import DeliveryEtaConfig from "./deliveryEtaConfig.js";
+import { CustomerNotification } from "./customerNotification.js";
+import { NotificationLog } from "./notificationLog.js";
 
 export {
   Order,
@@ -20,5 +22,7 @@ export {
   Seller,
   DeliveryFeeConfig,
   DeliveryEtaConfig,
-  Notification
+  Notification,
+  CustomerNotification,
+  NotificationLog
 };

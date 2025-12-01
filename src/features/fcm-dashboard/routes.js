@@ -1,9 +1,24 @@
-import { getFCMManagementDashboard, sendToCustomers, sendToSellers, sendToDelivery } from './fcmManagement.js';
+import {
+    getFCMManagementDashboard,
+    sendToCustomers,
+    sendToSellers,
+    sendToDelivery,
+    getDashboardTokens,
+    deleteDashboardToken,
+    getDashboardStats,
+    getDashboardHistory,
+    sendDashboardNotification
+} from './fcmManagement.js';
 
 // Admin Dashboard Route
 export async function adminFcmRoutes(fastify) {
     // Dashboard HTML page
     fastify.get('/fcm-management', getFCMManagementDashboard);
+    fastify.get('/fcm-management/api/tokens', getDashboardTokens);
+    fastify.delete('/fcm-management/api/tokens/:tokenId', deleteDashboardToken);
+    fastify.get('/fcm-management/api/history', getDashboardHistory);
+    fastify.get('/fcm-management/api/stats', getDashboardStats);
+    fastify.post('/fcm-management/api/send', sendDashboardNotification);
 }
 
 // API Routes for FCM operations

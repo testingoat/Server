@@ -27,6 +27,9 @@ export const upsertFcmToken = async (req, reply) => {
             return reply.status(404).send({ success: false, message: 'User not found' });
         }
 
+        user.fcmToken = fcmToken;
+        user.fcmTokenUpdatedAt = new Date();
+
         // Check if token already exists
         const existingTokenIndex = user.fcmTokens?.findIndex(t => t.token === fcmToken);
         

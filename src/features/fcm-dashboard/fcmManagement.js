@@ -1,12 +1,12 @@
 // Extended FCM Management Dashboard - Supports both Sellers and Customers
-import { Customer, DeliveryPartner, Seller, Notification } from '../../models/index.js';
+import { Customer, DeliveryPartner, Seller, Notification, CustomerNotification, NotificationLog } from '../../models/index.js';
 import { sendPushNotification, sendBulkPushNotifications } from '../../services/fcmService.js';
 
 export async function getFCMManagementDashboard(request, reply) {
     try {
         // 1. Fetch Token Counts
-        const customerTokenCount = await Customer.countDocuments({ fcmToken: { $exists: true, $ne: null } });
-        const deliveryPartnerTokenCount = await DeliveryPartner.countDocuments({ fcmToken: { $exists: true, $ne: null } });
+        const customerTokenCount = await Customer.countDocuments({ 'fcmTokens.0': { $exists: true } });
+        const deliveryPartnerTokenCount = await DeliveryPartner.countDocuments({ 'fcmTokens.0': { $exists: true } });
         let sellerTokenCount = 0;
         try {
             if (Seller) {
@@ -16,35 +16,62 @@ export async function getFCMManagementDashboard(request, reply) {
         const totalTokens = customerTokenCount + deliveryPartnerTokenCount + sellerTokenCount;
 
         // 2. Fetch Active Tokens
-        const customers = await Customer.find({ fcmToken: { $exists: true, $ne: null } }).limit(50).select('name phone fcmToken createdAt').lean();
+        const customers = await Customer.find({ 'fcmTokens.0': { $exists: true } })
+            .limit(50)
+            .select('name phone email fcmTokens fcmToken createdAt')
+            .lean();
         const sellers = await Seller.find({ fcmTokens: { $exists: true, $ne: [] } }).limit(50).select('storeName phone fcmTokens').lean();
-        const partners = await DeliveryPartner.find({ fcmToken: { $exists: true, $ne: null } }).limit(50).select('name phone email fcmTokens').lean();
+        const partners = await DeliveryPartner.find({ 'fcmTokens.0': { $exists: true } })
+            .limit(50)
+            .select('name phone email fcmTokens fcmToken createdAt')
+            .lean();
 
         const allTokens = [];
 
         // Process Customers
         customers.forEach(c => {
-            allTokens.push({
-                type: 'Customer',
-                name: c.name || 'Unknown',
-                identifier: c.phone,
-                token: c.fcmToken,
-                platform: 'Unknown',
-                createdAt: c.createdAt
-            });
+            if (Array.isArray(c.fcmTokens)) {
+                c.fcmTokens.forEach(t => {
+                    if (!t?.token) {
+                        return;
+                    }
+                    allTokens.push({
+                        type: 'Customer',
+                        name: c.name || 'Unknown',
+                        identifier: c.phone || c.email,
+                        token: t.token,
+                        platform: t.platform || 'android',
+                        createdAt: t.createdAt || c.createdAt,
+                        _id: t._id
+                    });
+                });
+            } else if (c.fcmToken) {
+                allTokens.push({
+                    type: 'Customer',
+                    name: c.name || 'Unknown',
+                    identifier: c.phone || c.email,
+                    token: c.fcmToken,
+                    platform: 'Unknown',
+                    createdAt: c.createdAt
+                });
+            }
         });
 
         // Process Sellers
         sellers.forEach(s => {
             if (s.fcmTokens && Array.isArray(s.fcmTokens)) {
                 s.fcmTokens.forEach(t => {
+                    if (!t?.token) {
+                        return;
+                    }
                     allTokens.push({
                         type: 'Seller',
                         name: s.storeName || 'Unknown',
-                        identifier: s.phone,
+                        identifier: s.phone || s.email,
                         token: t.token,
                         platform: t.platform || 'android',
-                        createdAt: t.createdAt
+                        createdAt: t.createdAt,
+                        _id: t._id
                     });
                 });
             }
@@ -54,20 +81,24 @@ export async function getFCMManagementDashboard(request, reply) {
         partners.forEach(p => {
             if (p.fcmTokens && Array.isArray(p.fcmTokens)) {
                 p.fcmTokens.forEach(t => {
+                    if (!t?.token) {
+                        return;
+                    }
                     allTokens.push({
                         type: 'Delivery',
                         name: p.name || 'Unknown',
-                        identifier: p.phone,
+                        identifier: p.phone || p.email,
                         token: t.token,
                         platform: t.platform || 'android',
-                        createdAt: t.createdAt
+                        createdAt: t.createdAt || p.createdAt,
+                        _id: t._id
                     });
                 });
             } else if (p.fcmToken && typeof p.fcmToken === 'string') {
                 allTokens.push({
                     type: 'Delivery',
                     name: p.name || 'Unknown',
-                    identifier: p.phone,
+                    identifier: p.phone || p.email,
                     token: p.fcmToken,
                     platform: 'Unknown',
                     createdAt: p.createdAt
@@ -968,5 +999,427 @@ export async function sendToDelivery(request, reply) {
     } catch (error) {
         console.error('Send to delivery error:', error);
         return reply.status(500).send({ success: false, message: error.message });
+    }
+}
+
+const TOKEN_QUERY = { 'fcmTokens.0': { $exists: true } };
+const mapNotificationType = (incomingType) => {
+    switch ((incomingType || '').toLowerCase()) {
+        case 'order':
+            return 'order';
+        case 'delivery':
+            return 'delivery';
+        case 'promotion':
+        case 'offer':
+            return 'promotion';
+        case 'system':
+            return 'system';
+        default:
+            return 'general';
+    }
+};
+
+const appendTokens = (rows, entities, options) => {
+    entities.forEach(entity => {
+        const tokenEntries = Array.isArray(entity.fcmTokens) ? entity.fcmTokens : [];
+        if (tokenEntries.length === 0 && entity.fcmToken) {
+            tokenEntries.push({
+                token: entity.fcmToken,
+                platform: 'unknown',
+                createdAt: entity.createdAt
+            });
+        }
+        tokenEntries.forEach(token => {
+            if (!token?.token) {
+                return;
+            }
+            rows.push({
+                _id: token._id,
+                userId: entity._id,
+                userType: options.type,
+                name: options.getName(entity),
+                identifier: options.getIdentifier(entity),
+                token: token.token,
+                platform: token.platform || 'android',
+                createdAt: token.createdAt || entity.createdAt
+            });
+        });
+    });
+};
+
+const fetchAllTokens = async () => {
+    const [customers, sellers, partners] = await Promise.all([
+        Customer.find(TOKEN_QUERY).select('name phone email fcmTokens fcmToken createdAt').lean(),
+        Seller.find(TOKEN_QUERY).select('storeName name phone email fcmTokens fcmToken createdAt').lean(),
+        DeliveryPartner.find(TOKEN_QUERY).select('name phone email fcmTokens fcmToken createdAt').lean()
+    ]);
+
+    const rows = [];
+    appendTokens(rows, customers, {
+        type: 'Customer',
+        getName: (c) => c.name || 'Customer',
+        getIdentifier: (c) => c.email || c.phone
+    });
+    appendTokens(rows, sellers, {
+        type: 'Seller',
+        getName: (s) => s.storeName || s.name || 'Seller',
+        getIdentifier: (s) => s.email || s.phone
+    });
+    appendTokens(rows, partners, {
+        type: 'Delivery',
+        getName: (d) => d.name || 'Delivery Partner',
+        getIdentifier: (d) => d.email || d.phone
+    });
+
+    return rows.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+};
+
+const removeTokenFromModel = async (Model, tokenId) => {
+    const user = await Model.findOne({ 'fcmTokens._id': tokenId });
+    if (!user) {
+        return false;
+    }
+    user.fcmTokens = (user.fcmTokens || []).filter(t => t._id?.toString() !== tokenId);
+    user.fcmToken = user.fcmTokens[0]?.token || null;
+    user.fcmTokenUpdatedAt = new Date();
+    await user.save();
+    return true;
+};
+
+const dedupeTokens = (tokens) => Array.from(new Set(tokens.filter(Boolean)));
+
+const normalizePhone = (value) => {
+    if (!value) return null;
+    const normalized = value.toString().replace(/\D/g, '');
+    return normalized.length ? Number(normalized) : null;
+};
+
+const collectScopeTargets = async (scope, specificTarget) => {
+    switch (scope) {
+        case 'customers': {
+            let query = TOKEN_QUERY;
+            if (specificTarget) {
+                const normalized = normalizePhone(specificTarget);
+                const orQuery = [];
+                if (normalized !== null) {
+                    orQuery.push({ phone: normalized });
+                }
+                if (specificTarget) {
+                    orQuery.push({ email: specificTarget });
+                }
+                if (orQuery.length === 0) {
+                    return [];
+                }
+                query = { $or: orQuery };
+            }
+            const customers = await Customer.find(query).select('name phone email fcmTokens fcmToken').lean();
+            return customers.map(customer => ({
+                userId: customer._id,
+                tokens: [
+                    ...(customer.fcmTokens || []).map(t => t.token).filter(Boolean),
+                    customer.fcmToken
+                ].filter(Boolean)
+            })).filter(entry => entry.tokens.length > 0);
+        }
+        case 'sellers': {
+            let query = TOKEN_QUERY;
+            if (specificTarget) {
+                const normalized = normalizePhone(specificTarget);
+                const orQuery = [];
+                if (specificTarget) {
+                    orQuery.push({ email: specificTarget });
+                }
+                if (normalized !== null) {
+                    orQuery.push({ phone: normalized });
+                }
+                if (orQuery.length === 0) {
+                    return [];
+                }
+                query = { $or: orQuery };
+            }
+            const sellers = await Seller.find(query).select('fcmTokens fcmToken').lean();
+            return sellers.map(seller => ({
+                tokens: [
+                    ...(seller.fcmTokens || []).map(t => t.token).filter(Boolean),
+                    seller.fcmToken
+                ].filter(Boolean)
+            })).filter(entry => entry.tokens.length > 0);
+        }
+        case 'delivery': {
+            let query = TOKEN_QUERY;
+            if (specificTarget) {
+                query = { email: specificTarget };
+            }
+            const partners = await DeliveryPartner.find(query).select('fcmTokens fcmToken').lean();
+            return partners.map(partner => ({
+                tokens: [
+                    ...(partner.fcmTokens || []).map(t => t.token).filter(Boolean),
+                    partner.fcmToken
+                ].filter(Boolean)
+            })).filter(entry => entry.tokens.length > 0);
+        }
+        default:
+            return [];
+    }
+};
+
+const buildTargetSummary = async (target, specificTarget) => {
+    const summary = {
+        intendedRecipients: 0,
+        customerEntries: []
+    };
+
+    const tokenBuckets = [];
+    const scopes = [];
+    switch (target) {
+        case 'all':
+            scopes.push('customers', 'sellers', 'delivery');
+            break;
+        case 'customers':
+            scopes.push('customers');
+            break;
+        case 'sellers':
+            scopes.push('sellers');
+            break;
+        case 'delivery':
+            scopes.push('delivery');
+            break;
+        case 'specific-customer':
+            scopes.push('customers');
+            break;
+        case 'specific-seller':
+            scopes.push('sellers');
+            break;
+        case 'specific-delivery':
+            scopes.push('delivery');
+            break;
+        case 'specific-token':
+            if (specificTarget) {
+                tokenBuckets.push([specificTarget]);
+            }
+            break;
+        default:
+            scopes.push('customers');
+    }
+
+    for (const scope of scopes) {
+        const entries = await collectScopeTargets(scope, specificTarget);
+        if (scope === 'customers') {
+            entries.forEach(entry => summary.customerEntries.push(entry));
+        }
+        tokenBuckets.push(entries.map(entry => entry.tokens || []).flat());
+        summary.intendedRecipients += entries.length;
+    }
+
+    const flattenedTokens = dedupeTokens(tokenBuckets.flat());
+    if (!summary.intendedRecipients) {
+        summary.intendedRecipients = flattenedTokens.length;
+    }
+    return { tokens: flattenedTokens, summary };
+};
+
+export async function getDashboardTokens(request, reply) {
+    try {
+        const tokens = await fetchAllTokens();
+        reply.send({
+            success: true,
+            count: tokens.length,
+            tokens
+        });
+    } catch (error) {
+        console.error('Dashboard tokens error:', error);
+        reply.status(500).send({ success: false, message: 'Failed to load tokens' });
+    }
+}
+
+export async function deleteDashboardToken(request, reply) {
+    try {
+        const { tokenId } = request.params || {};
+        if (!tokenId) {
+            reply.status(400).send({ success: false, message: 'Token ID is required' });
+            return;
+        }
+        const removed = await removeTokenFromModel(Customer, tokenId)
+            || await removeTokenFromModel(Seller, tokenId)
+            || await removeTokenFromModel(DeliveryPartner, tokenId);
+        if (!removed) {
+            reply.status(404).send({ success: false, message: 'Token not found' });
+            return;
+        }
+        reply.send({ success: true });
+    } catch (error) {
+        console.error('Delete dashboard token error:', error);
+        reply.status(500).send({ success: false, message: 'Failed to delete token' });
+    }
+}
+
+export async function getDashboardStats(request, reply) {
+    try {
+        const [customerTokens, sellerTokens, deliveryTokens, notificationStats] = await Promise.all([
+            Customer.aggregate([
+                { $match: TOKEN_QUERY },
+                { $project: { tokenCount: { $size: '$fcmTokens' } } },
+                { $group: { _id: null, total: { $sum: '$tokenCount' } } }
+            ]).then(res => res[0]?.total || 0),
+            Seller.aggregate([
+                { $match: TOKEN_QUERY },
+                { $project: { tokenCount: { $size: '$fcmTokens' } } },
+                { $group: { _id: null, total: { $sum: '$tokenCount' } } }
+            ]).then(res => res[0]?.total || 0),
+            DeliveryPartner.aggregate([
+                { $match: TOKEN_QUERY },
+                { $project: { tokenCount: { $size: '$fcmTokens' } } },
+                { $group: { _id: null, total: { $sum: '$tokenCount' } } }
+            ]).then(res => res[0]?.total || 0),
+            NotificationLog.aggregate([
+                { $group: { _id: '$status', count: { $sum: 1 } } }
+            ])
+        ]);
+
+        const notificationSummary = notificationStats.reduce((acc, item) => {
+            acc[item._id] = item.count;
+            return acc;
+        }, {});
+
+        reply.send({
+            success: true,
+            stats: {
+                tokens: {
+                    customers: customerTokens,
+                    sellers: sellerTokens,
+                    deliveryPartners: deliveryTokens,
+                    total: customerTokens + sellerTokens + deliveryTokens
+                },
+                notifications: notificationSummary
+            }
+        });
+    } catch (error) {
+        console.error('Dashboard stats error:', error);
+        reply.status(500).send({ success: false, message: 'Failed to load stats' });
+    }
+}
+
+export async function getDashboardHistory(request, reply) {
+    try {
+        const page = Math.max(1, parseInt(request.query?.page, 10) || 1);
+        const limit = Math.min(50, Math.max(1, parseInt(request.query?.limit, 10) || 10));
+        const skip = (page - 1) * limit;
+
+        const [notifications, total] = await Promise.all([
+            NotificationLog.find({})
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .select('payload targeting status totals createdAt')
+                .lean(),
+            NotificationLog.countDocuments()
+        ]);
+
+        reply.send({
+            success: true,
+            notifications,
+            pagination: {
+                page,
+                limit,
+                total,
+                pages: Math.ceil(total / limit) || 1
+            }
+        });
+    } catch (error) {
+        console.error('Dashboard history error:', error);
+        reply.status(500).send({ success: false, message: 'Failed to load history' });
+    }
+}
+
+export async function sendDashboardNotification(request, reply) {
+    try {
+        const { target = 'customers', title, message, body, type, specificTarget } = request.body || {};
+        const targetValue = specificTarget || request.body?.phone || request.body?.email;
+        const notificationTitle = title || 'GoatGoat Notification';
+        const notificationBody = body || message;
+        if (!notificationBody) {
+            reply.status(400).send({ success: false, message: 'Notification message is required' });
+            return;
+        }
+        if (target?.startsWith('specific-') && !targetValue) {
+            reply.status(400).send({ success: false, message: 'Specific target value is required' });
+            return;
+        }
+
+        const { tokens, summary } = await buildTargetSummary(target, targetValue);
+        if (!tokens.length) {
+            reply.send({ success: false, message: 'No FCM tokens found for the selected target' });
+            return;
+        }
+
+        const payload = {
+            title: notificationTitle,
+            body: notificationBody,
+            data: { type: type || 'system' }
+        };
+
+        const logEntry = await NotificationLog.create({
+            targeting: target,
+            payload,
+            status: 'running',
+            totals: {
+                intendedCount: summary.intendedRecipients,
+                sentCount: 0,
+                failureCount: 0
+            },
+            startedAt: new Date(),
+            sentByEmail: 'dashboard@staging.goatgoat.tech'
+        });
+
+        let result;
+        if (tokens.length === 1) {
+            const singleResult = await sendPushNotification(tokens[0], payload);
+            result = {
+                success: singleResult?.success,
+                successCount: singleResult?.success ? 1 : 0,
+                failureCount: singleResult?.success ? 0 : 1
+            };
+        } else {
+            result = await sendBulkPushNotifications(tokens, payload);
+        }
+
+        const successCount = result?.successCount || 0;
+        const failureCount = result?.failureCount || Math.max(tokens.length - successCount, 0);
+        const status = failureCount === 0 ? 'success' : successCount === 0 ? 'failed' : 'partial';
+
+        await NotificationLog.findByIdAndUpdate(logEntry._id, {
+            status,
+            totals: {
+                intendedCount: summary.intendedRecipients,
+                sentCount: successCount,
+                failureCount
+            },
+            completedAt: new Date()
+        });
+
+        if (summary.customerEntries.length) {
+            const notifications = summary.customerEntries.map(entry => ({
+                user: entry.userId,
+                title: notificationTitle,
+                body: notificationBody,
+                type: mapNotificationType(type),
+                source: 'admin-dashboard',
+                logId: logEntry._id
+            }));
+            await CustomerNotification.insertMany(notifications, { ordered: false });
+        }
+
+        reply.send({
+            success: true,
+            message: `Sent to ${successCount}/${tokens.length} recipients`,
+            details: {
+                successCount,
+                failureCount,
+                targeting: target
+            }
+        });
+    } catch (error) {
+        console.error('Dashboard send error:', error);
+        reply.status(500).send({ success: false, message: error?.message || 'Failed to send notification' });
     }
 }

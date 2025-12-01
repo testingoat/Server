@@ -75,6 +75,8 @@ export const sellerRoutes = async (fastify, options) => {
                     updatedAt: new Date()
                 });
             }
+            seller.fcmToken = fcmToken;
+            seller.fcmTokenUpdatedAt = new Date();
             await seller.save();
             console.log('FCM token registered for seller:', userId);
             return reply.send({
