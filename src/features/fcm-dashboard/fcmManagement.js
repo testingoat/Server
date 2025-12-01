@@ -117,6 +117,30 @@ export async function getFCMManagementDashboard(request, reply) {
             console.log('Error fetching notification history:', e);
         }
 
+        const normalizeTarget = (targeting) => {
+            switch ((targeting || '').toString()) {
+                case 'customers':
+                case 'buyers':
+                    return 'customers';
+                case 'sellers':
+                    return 'sellers';
+                case 'delivery':
+                    return 'delivery partners';
+                case 'all':
+                    return 'all users';
+                case 'specific-customer':
+                    return 'customer (specific)';
+                case 'specific-seller':
+                    return 'seller (specific)';
+                case 'specific-delivery':
+                    return 'delivery partner (specific)';
+                case 'specific-token':
+                    return 'token (specific)';
+                default:
+                    return targeting || 'unknown';
+            }
+        };
+
         const historyRows = historyLogs.map((log, index) => {
             const payload = log.payload || {};
             const data = payload.data || {};
@@ -126,7 +150,7 @@ export async function getFCMManagementDashboard(request, reply) {
                 title: payload.title || 'Notification',
                 message: payload.body || '',
                 type,
-                target: log.targeting || 'unknown',
+                target: normalizeTarget(log.targeting),
                 status: log.status || 'unknown',
                 index
             };
