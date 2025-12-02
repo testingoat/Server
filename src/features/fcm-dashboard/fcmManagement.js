@@ -1390,10 +1390,24 @@ export async function getDashboardHistory(request, reply) {
 
 export async function sendDashboardNotification(request, reply) {
     try {
-        const { target = 'customers', title, message, body, type, specificTarget } = request.body || {};
+        const {
+            target = 'customers',
+            title,
+            message,
+            body,
+            type,
+            specificTarget,
+            imageUrl,
+            screen,
+            orderId,
+            categoryId,
+            query
+        } = request.body || {};
+
         const targetValue = specificTarget || request.body?.phone || request.body?.email;
         const notificationTitle = title || 'GoatGoat Notification';
         const notificationBody = body || message;
+
         if (!notificationBody) {
             reply.status(400).send({ success: false, message: 'Notification message is required' });
             return;
@@ -1409,10 +1423,19 @@ export async function sendDashboardNotification(request, reply) {
             return;
         }
 
+        const dataPayload = {
+            type: type || 'system'
+        };
+        if (screen) dataPayload.screen = screen;
+        if (orderId) dataPayload.orderId = orderId;
+        if (categoryId) dataPayload.categoryId = categoryId;
+        if (query) dataPayload.query = query;
+
         const payload = {
             title: notificationTitle,
             body: notificationBody,
-            data: { type: type || 'system' }
+            imageUrl: imageUrl || undefined,
+            data: dataPayload
         };
 
         const logEntry = await NotificationLog.create({

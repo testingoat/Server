@@ -365,6 +365,42 @@
                     <label id="specificTargetLabel">Enter Email/Token</label>
                     <input type="text" id="specificTarget" placeholder="Enter email or token">
                 </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Image URL (optional)</label>
+                        <input type="text" id="imageUrl" placeholder="https://cdn.example.com/banner.png">
+                    </div>
+                    <div class="form-group">
+                        <label>Notification Type</label>
+                        <select id="type">
+                            <option value="system">System</option>
+                            <option value="promotion">Promotion</option>
+                            <option value="order">Order</option>
+                            <option value="delivery">Delivery</option>
+                            <option value="admin_broadcast">Admin Broadcast</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Target Screen (optional)</label>
+                        <input type="text" id="targetScreen" placeholder="e.g. SearchResults, OrdersScreen">
+                    </div>
+                    <div class="form-group">
+                        <label>Order ID (optional)</label>
+                        <input type="text" id="orderId" placeholder="Order ID for order/delivery updates">
+                    </div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Category ID (optional)</label>
+                        <input type="text" id="categoryId" placeholder="Category ID for campaigns">
+                    </div>
+                    <div class="form-group">
+                        <label>Search Query (optional)</label>
+                        <input type="text" id="query" placeholder="Search term for promotions">
+                    </div>
+                </div>
                 <button type="submit" class="btn btn-primary">Send Notification</button>
                 <button type="reset" class="btn btn-secondary">Reset</button>
             </form>
@@ -604,7 +640,13 @@
             const formData = {
                 title: document.getElementById('title').value,
                 body: document.getElementById('message').value,
-                target: target
+                target: target,
+                type: document.getElementById('type').value,
+                imageUrl: document.getElementById('imageUrl').value || undefined,
+                screen: document.getElementById('targetScreen').value || undefined,
+                orderId: document.getElementById('orderId').value || undefined,
+                categoryId: document.getElementById('categoryId').value || undefined,
+                query: document.getElementById('query').value || undefined
             };
 
             // Add specific target if selected
@@ -647,4 +689,3 @@
     </script>
 </body>
 </html>
-
