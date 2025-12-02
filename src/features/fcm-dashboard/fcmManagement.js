@@ -1579,7 +1579,9 @@ export async function sendDashboardNotification(request, reply) {
         }
 
         const dataPayload = {
-            type: type || 'system'
+            type: type || 'system',
+            // Tag dashboard-origin notifications so the app can de-duplicate
+            source: 'admin-dashboard'
         };
         if (screen) dataPayload.screen = screen;
         if (orderId) dataPayload.orderId = orderId;
