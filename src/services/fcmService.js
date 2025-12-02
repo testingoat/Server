@@ -13,7 +13,8 @@ export const sendPushNotification = async (fcmToken, payload) => {
             notification: {
                 title: payload.title,
                 body: payload.body,
-                ...(payload.imageUrl && { imageUrl: payload.imageUrl }),
+                // Firebase Admin uses `image` (not imageUrl) for rich notifications
+                ...(payload.imageUrl && { image: payload.imageUrl }),
             },
             data: payload.data || {},
             android: {
@@ -48,7 +49,7 @@ export const sendBulkPushNotifications = async (fcmTokens, payload) => {
             notification: {
                 title: payload.title,
                 body: payload.body,
-                ...(payload.imageUrl && { imageUrl: payload.imageUrl }),
+                ...(payload.imageUrl && { image: payload.imageUrl }),
             },
             data: payload.data || {},
             android: {
@@ -133,7 +134,7 @@ export const sendTopicNotification = async (topic, payload) => {
             notification: {
                 title: payload.title,
                 body: payload.body,
-                ...(payload.imageUrl && { imageUrl: payload.imageUrl }),
+                ...(payload.imageUrl && { image: payload.imageUrl }),
             },
             data: payload.data || {},
             android: {

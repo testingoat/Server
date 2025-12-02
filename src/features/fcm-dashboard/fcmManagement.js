@@ -1637,6 +1637,7 @@ export async function sendDashboardNotification(request, reply) {
                 user: entry.userId,
                 title: notificationTitle,
                 body: notificationBody,
+                imageUrl: imageUrl || undefined,
                 type: mapNotificationType(type),
                 source: 'admin-dashboard',
                 logId: logEntry._id

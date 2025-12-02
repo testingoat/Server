@@ -9,6 +9,7 @@ const customerNotificationSchema = new mongoose.Schema({
     },
     title: { type: String, required: true },
     body: { type: String, required: true },
+    imageUrl: { type: String },
     type: {
         type: String,
         enum: ['order', 'delivery', 'promotion', 'system', 'general'],
