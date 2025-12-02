@@ -68,6 +68,44 @@ export const sendBulkPushNotifications = async (fcmTokens, payload) => {
                 .map((r, idx) => r.error ? { index: idx, code: r.error.code, message: r.error.message } : null)
                 .filter(Boolean);
             console.warn('⚠️ FCM bulk send failures:', errorSummaries.slice(0, 5));
+
+            // Prune permanently invalid tokens
+            const permanentErrorCodes = new Set([
+                'messaging/registration-token-not-registered',
+                'messaging/invalid-registration-token'
+            ]);
+
+            await Promise.all(
+                response.responses.map(async (res, idx) => {
+                    if (!res.error) return;
+                    if (!permanentErrorCodes.has(res.error.code)) return;
+
+                    const badToken = fcmTokens[idx];
+                    try {
+                        console.warn('🧹 Removing invalid FCM token:', badToken.substring(0, 20) + '...', res.error.code);
+
+                        // Remove from Customer and DeliveryPartner collections
+                        await Promise.all([
+                            Customer.updateMany(
+                                { 'fcmTokens.token': badToken },
+                                {
+                                    $pull: { fcmTokens: { token: badToken } },
+                                    $set: { fcmTokenUpdatedAt: new Date() }
+                                }
+                            ),
+                            DeliveryPartner.updateMany(
+                                { 'fcmTokens.token': badToken },
+                                {
+                                    $pull: { fcmTokens: { token: badToken } },
+                                    $set: { fcmTokenUpdatedAt: new Date() }
+                                }
+                            )
+                        ]);
+                    } catch (cleanupError) {
+                        console.error('❌ Failed to prune invalid FCM token:', cleanupError);
+                    }
+                })
+            );
         }
 
         return {
