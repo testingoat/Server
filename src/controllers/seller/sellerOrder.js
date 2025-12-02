@@ -14,7 +14,19 @@ export const getSellerOrders = async (req, reply) => {
         // Build query
         let query = { seller: userId };
         if (status) {
-            query.status = status;
+            // Support comma-separated multi-status filters from client
+            if (typeof status === 'string' && status.includes(',')) {
+                const statusList = status
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean);
+                if (statusList.length > 0) {
+                    query.status = { $in: statusList };
+                }
+            }
+            else {
+                query.status = status;
+            }
         }
         // Get orders with pagination
         const orders = await Order.find(query)
