@@ -8,7 +8,20 @@ const notificationLogSchema = new mongoose.Schema({
     sentByEmail: { type: String, default: 'system@goatgoat.com' },
     targeting: {
         type: String,
-        enum: ['all', 'buyers', 'sellers', 'delivery', 'custom'],
+        enum: [
+            // legacy values
+            'all',
+            'buyers',
+            'sellers',
+            'delivery',
+            'custom',
+            // new dashboard targets
+            'customers',
+            'specific-customer',
+            'specific-seller',
+            'specific-delivery',
+            'specific-token'
+        ],
         required: true
     },
     filters: {

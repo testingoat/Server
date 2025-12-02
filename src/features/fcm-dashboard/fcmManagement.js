@@ -610,14 +610,42 @@ export async function getFCMManagementDashboard(request, reply) {
                         <label>Message</label>
                         <textarea id="sellerMessage" placeholder="Notification message" required></textarea>
                     </div>
-                    <div class="form-group">
-                        <label>Type</label>
-                        <select id="sellerType">
-                            <option value="general">General</option>
-                            <option value="order">New Order</option>
-                            <option value="system">System Update</option>
-                        </select>
-                    </div>
+                  <div class="grid-2">
+                      <div class="form-group">
+                          <label>Notification Type</label>
+                          <select id="sellerType">
+                              <option value="system">System</option>
+                              <option value="promotion">Promotion</option>
+                              <option value="order">Order</option>
+                              <option value="delivery">Delivery</option>
+                              <option value="admin_broadcast">Admin Broadcast</option>
+                          </select>
+                      </div>
+                      <div class="form-group">
+                          <label>Image URL (optional)</label>
+                          <input type="text" id="sellerImageUrl" placeholder="https://cdn.example.com/banner.png">
+                      </div>
+                  </div>
+                  <div class="grid-2">
+                      <div class="form-group">
+                          <label>Target Screen (optional)</label>
+                          <input type="text" id="sellerTargetScreen" placeholder="e.g. OrdersScreen, LiveTracking">
+                      </div>
+                      <div class="form-group">
+                          <label>Order ID (optional)</label>
+                          <input type="text" id="sellerOrderId" placeholder="Order ID for deep-linking">
+                      </div>
+                  </div>
+                  <div class="grid-2">
+                      <div class="form-group">
+                          <label>Category ID (optional)</label>
+                          <input type="text" id="sellerCategoryId" placeholder="Category for promo campaigns">
+                      </div>
+                      <div class="form-group">
+                          <label>Search Query (optional)</label>
+                          <input type="text" id="sellerQuery" placeholder="Saved search or keyword">
+                      </div>
+                  </div>
                     <button type="submit" class="btn btn-success">Send to Sellers</button>
                 </form>
                 <div id="sellerResult" class="result"></div>
@@ -644,24 +672,50 @@ export async function getFCMManagementDashboard(request, reply) {
                         </select>
                     </div>
                 </div>
-                <div class="grid-2">
-                    <div class="form-group">
-                        <label>Title</label>
-                        <input type="text" id="deliveryTitle" placeholder="Notification title" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Type</label>
-                        <select id="deliveryType">
-                            <option value="general">General</option>
-                            <option value="order">New Delivery</option>
-                            <option value="system">System Update</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Message</label>
-                    <textarea id="deliveryMessage" placeholder="Notification message" required></textarea>
-                </div>
+                  <div class="grid-2">
+                      <div class="form-group">
+                          <label>Title</label>
+                          <input type="text" id="deliveryTitle" placeholder="Notification title" required>
+                      </div>
+                      <div class="form-group">
+                          <label>Notification Type</label>
+                          <select id="deliveryType">
+                              <option value="system">System</option>
+                              <option value="promotion">Promotion</option>
+                              <option value="order">Order</option>
+                              <option value="delivery">Delivery</option>
+                              <option value="admin_broadcast">Admin Broadcast</option>
+                          </select>
+                      </div>
+                  </div>
+                  <div class="form-group">
+                      <label>Message</label>
+                      <textarea id="deliveryMessage" placeholder="Notification message" required></textarea>
+                  </div>
+                  <div class="grid-2">
+                      <div class="form-group">
+                          <label>Image URL (optional)</label>
+                          <input type="text" id="deliveryImageUrl" placeholder="https://cdn.example.com/banner.png">
+                      </div>
+                      <div class="form-group">
+                          <label>Target Screen (optional)</label>
+                          <input type="text" id="deliveryTargetScreen" placeholder="e.g. OrdersScreen, LiveTracking">
+                      </div>
+                  </div>
+                  <div class="grid-2">
+                      <div class="form-group">
+                          <label>Order ID (optional)</label>
+                          <input type="text" id="deliveryOrderId" placeholder="Order ID for deep-linking">
+                      </div>
+                      <div class="form-group">
+                          <label>Category ID (optional)</label>
+                          <input type="text" id="deliveryCategoryId" placeholder="Category for promo campaigns">
+                      </div>
+                  </div>
+                  <div class="form-group">
+                      <label>Search Query (optional)</label>
+                      <input type="text" id="deliveryQuery" placeholder="Saved search or keyword">
+                  </div>
                 <button type="submit" class="btn btn-success">Send to Delivery Partners</button>
             </form>
             <div id="deliveryResult" class="result"></div>
@@ -892,17 +946,41 @@ export async function getFCMManagementDashboard(request, reply) {
             btn.disabled = true;
 
             const resultDiv = document.getElementById('sellerResult');
-            const target = document.getElementById('sellerTarget').value;
+            const rawTarget = document.getElementById('sellerTarget').value;
             const phone = document.getElementById('sellerPhone').value;
             const title = document.getElementById('sellerTitle').value;
             const message = document.getElementById('sellerMessage').value;
             const type = document.getElementById('sellerType').value;
 
+            const formData = {
+                title,
+                body: message,
+                target: rawTarget === 'all' ? 'sellers' : 'specific-seller',
+                type,
+                imageUrl: document.getElementById('sellerImageUrl').value || undefined,
+                screen: document.getElementById('sellerTargetScreen').value || undefined,
+                orderId: document.getElementById('sellerOrderId').value || undefined,
+                categoryId: document.getElementById('sellerCategoryId').value || undefined,
+                query: document.getElementById('sellerQuery').value || undefined
+            };
+
+            if (rawTarget === 'specific') {
+                if (!phone) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = 'Please select a seller to target.';
+                    resultDiv.style.display = 'block';
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+                formData.specificTarget = phone;
+            }
+
             try {
-                const response = await fetch('/api/fcm/send-to-sellers', {
+                const response = await fetch('/admin/fcm-management/api/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ target, phone, title, message, type })
+                    body: JSON.stringify(formData)
                 });
                 const data = await response.json();
                 resultDiv.className = 'result ' + (data.success ? 'success' : 'error');
@@ -928,17 +1006,41 @@ export async function getFCMManagementDashboard(request, reply) {
             btn.disabled = true;
 
             const resultDiv = document.getElementById('deliveryResult');
-            const target = document.getElementById('deliveryTarget').value;
+            const rawTarget = document.getElementById('deliveryTarget').value;
             const email = document.getElementById('deliveryEmail').value;
             const title = document.getElementById('deliveryTitle').value;
             const message = document.getElementById('deliveryMessage').value;
             const type = document.getElementById('deliveryType').value;
 
+            const formData = {
+                title,
+                body: message,
+                target: rawTarget === 'all' ? 'delivery' : 'specific-delivery',
+                type,
+                imageUrl: document.getElementById('deliveryImageUrl').value || undefined,
+                screen: document.getElementById('deliveryTargetScreen').value || undefined,
+                orderId: document.getElementById('deliveryOrderId').value || undefined,
+                categoryId: document.getElementById('deliveryCategoryId').value || undefined,
+                query: document.getElementById('deliveryQuery').value || undefined
+            };
+
+            if (rawTarget === 'specific') {
+                if (!email) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = 'Please select a delivery partner to target.';
+                    resultDiv.style.display = 'block';
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+                formData.specificTarget = email;
+            }
+
             try {
-                const response = await fetch('/api/fcm/send-to-delivery', {
+                const response = await fetch('/admin/fcm-management/api/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ target, email, title, message, type })
+                    body: JSON.stringify(formData)
                 });
                 const data = await response.json();
                 resultDiv.className = 'result ' + (data.success ? 'success' : 'error');
