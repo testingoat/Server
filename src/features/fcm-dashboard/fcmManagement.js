@@ -543,14 +543,41 @@ export async function getFCMManagementDashboard(request, reply) {
                         <label>Message</label>
                         <textarea id="customerMessage" placeholder="Notification message" required></textarea>
                     </div>
-                    <div class="form-group">
-                        <label>Type</label>
-                        <select id="customerType">
-                            <option value="general">General</option>
-                            <option value="order">Order Update</option>
-                            <option value="delivery">Delivery Update</option>
-                            <option value="promotion">Promotion</option>
-                        </select>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Notification Type</label>
+                            <select id="customerType">
+                                <option value="system">System</option>
+                                <option value="promotion">Promotion</option>
+                                <option value="order">Order</option>
+                                <option value="delivery">Delivery</option>
+                                <option value="admin_broadcast">Admin Broadcast</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Image URL (optional)</label>
+                            <input type="text" id="customerImageUrl" placeholder="https://cdn.example.com/banner.png">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Target Screen (optional)</label>
+                            <input type="text" id="customerTargetScreen" placeholder="e.g. OrdersScreen, LiveTracking">
+                        </div>
+                        <div class="form-group">
+                            <label>Order ID (optional)</label>
+                            <input type="text" id="customerOrderId" placeholder="Order ID for deep-linking">
+                        </div>
+                    </div>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Category ID (optional)</label>
+                            <input type="text" id="customerCategoryId" placeholder="Category for promo campaigns">
+                        </div>
+                        <div class="form-group">
+                            <label>Search Query (optional)</label>
+                            <input type="text" id="customerQuery" placeholder="Saved search or keyword">
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-success">Send to Customers</button>
                 </form>
@@ -803,23 +830,49 @@ export async function getFCMManagementDashboard(request, reply) {
             btn.disabled = true;
 
             const resultDiv = document.getElementById('customerResult');
-            const target = document.getElementById('customerTarget').value;
+            const rawTarget = document.getElementById('customerTarget').value;
             const phone = document.getElementById('customerPhone').value;
             const title = document.getElementById('customerTitle').value;
             const message = document.getElementById('customerMessage').value;
             const type = document.getElementById('customerType').value;
 
+            const formData = {
+                title,
+                body: message,
+                target: rawTarget === 'all' ? 'customers' : 'specific-customer',
+                type,
+                imageUrl: document.getElementById('customerImageUrl').value || undefined,
+                screen: document.getElementById('customerTargetScreen').value || undefined,
+                orderId: document.getElementById('customerOrderId').value || undefined,
+                categoryId: document.getElementById('customerCategoryId').value || undefined,
+                query: document.getElementById('customerQuery').value || undefined
+            };
+
+            if (rawTarget === 'specific') {
+                if (!phone) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = 'Please select a customer to target.';
+                    resultDiv.style.display = 'block';
+                    btn.textContent = originalText;
+                    btn.disabled = false;
+                    return;
+                }
+                formData.specificTarget = phone;
+            }
+
             try {
-                const response = await fetch('/api/fcm/send-to-customers', {
+                const response = await fetch('/admin/fcm-management/api/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ target, phone, title, message, type })
+                    body: JSON.stringify(formData)
                 });
                 const data = await response.json();
                 resultDiv.className = 'result ' + (data.success ? 'success' : 'error');
                 resultDiv.textContent = data.message || JSON.stringify(data);
                 resultDiv.style.display = 'block';
-                if(data.success) showToast('Notification sent successfully!');
+                if (data.success) {
+                    showToast('Notification sent successfully!');
+                }
             } catch (error) {
                 resultDiv.className = 'result error';
                 resultDiv.textContent = 'Error: ' + error.message;
