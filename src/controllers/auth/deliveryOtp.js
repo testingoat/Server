@@ -16,7 +16,8 @@ const generateTokens = (user) => {
     };
     
     const accessToken = jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-        expiresIn: '15m',
+        // Align delivery partner token lifetime with customer/seller (1 day)
+        expiresIn: '1d',
     });
     
     const refreshToken = jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
