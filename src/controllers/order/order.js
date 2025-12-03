@@ -134,15 +134,30 @@ export const getOrders = async (req, reply) => {
     try {
         const { status, customerId, deliveryPartnerId, branchId } = req.query;
         let query = {};
+        // Handle status filter (supports comma-separated lists)
         if (status) {
-            query.status = status;
+            if (typeof status === 'string' && status.includes(',')) {
+                const statusList = status
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean);
+                if (statusList.length > 0) {
+                    query.status = { $in: statusList };
+                }
+            }
+            else {
+                query.status = status;
+            }
         }
         if (customerId) {
             query.customer = customerId;
         }
         if (deliveryPartnerId) {
             query.deliveryPartner = deliveryPartnerId;
-            query.branch = branchId;
+            // Only filter by branch when explicitly provided
+            if (branchId) {
+                query.branch = branchId;
+            }
             // For delivery partners, only show orders that are 'available' or beyond
             // (exclude 'pending_seller_approval' and 'seller_rejected')
             if (!status) {
