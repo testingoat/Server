@@ -13,8 +13,8 @@ export const sendPushNotification = async (fcmToken, payload) => {
             notification: {
                 title: payload.title,
                 body: payload.body,
-                // Firebase Admin uses `image` (not imageUrl) for rich notifications
-                ...(payload.imageUrl && { image: payload.imageUrl }),
+                // Use imageUrl to match existing Customer/Seller implementation
+                ...(payload.imageUrl && { imageUrl: payload.imageUrl }),
             },
             data: payload.data || {},
             android: {
@@ -49,7 +49,8 @@ export const sendBulkPushNotifications = async (fcmTokens, payload) => {
             notification: {
                 title: payload.title,
                 body: payload.body,
-                ...(payload.imageUrl && { image: payload.imageUrl }),
+                // Use imageUrl so FCM can render rich notifications
+                ...(payload.imageUrl && { imageUrl: payload.imageUrl }),
             },
             data: payload.data || {},
             android: {
