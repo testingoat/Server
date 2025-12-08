@@ -63,6 +63,7 @@ const deliveryPartnerSchema = new mongoose.Schema({
     vehicleNumber: { type: String },
     drivingLicenseNumber: { type: String },
     bloodGroup: { type: String },
+    insuranceNumber: { type: String },
     aadharNumber: { type: String },
     panNumber: { type: String },
     bankAccountNumber: { type: String },
@@ -186,4 +187,3 @@ export const DeliveryPartner = mongoose.model(
 );
 export const Admin = mongoose.model("Admin", adminSchema);
 export const Seller = mongoose.model('Seller', sellerSchema);
-
