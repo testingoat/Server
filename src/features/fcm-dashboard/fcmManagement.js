@@ -1587,6 +1587,7 @@ export async function sendDashboardNotification(request, reply) {
         if (orderId) dataPayload.orderId = orderId;
         if (categoryId) dataPayload.categoryId = categoryId;
         if (query) dataPayload.query = query;
+        if (imageUrl) dataPayload.imageUrl = imageUrl;
 
         const payload = {
             title: notificationTitle,
