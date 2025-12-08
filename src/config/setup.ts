@@ -494,6 +494,19 @@ export const admin = new AdminJS({
                 }
             }
         },
+        // Internal Product resource for references (used by Order items)
+        {
+            resource: Models.Product,
+            options: {
+                id: 'Product',
+                navigation: null,
+                actions: {
+                    new: { isVisible: false },
+                    edit: { isVisible: false },
+                    delete: { isVisible: false },
+                },
+            }
+        },
         // Category Management
         {
             resource: Models.Category,
