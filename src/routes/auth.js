@@ -3,7 +3,7 @@ import { updateUser } from '../controllers/tracking/user.js';
 import { verifyToken } from '../middleware/auth.js';
 import { requestOTP, verifyOTP, testOTP } from '../controllers/auth/otp.js';
 import { requestDeliveryOtp, verifyDeliveryOtp, registerDeliveryPartner } from '../controllers/auth/deliveryOtp.js';
-import { getDeliveryPartnerStats } from '../controllers/deliveryPartner/stats.js';
+import { getDeliveryPartnerStats, getDeliveryPartnerDailyStats } from '../controllers/deliveryPartner/stats.js';
 
 export const authRoutes = async (fastify, options) => {
     console.log('Registering auth routes');
@@ -50,6 +50,8 @@ export const authRoutes = async (fastify, options) => {
     console.log('Registering /delivery-partner/stats');
     fastify.get('/delivery-partner/stats', { preHandler: [verifyToken] }, getDeliveryPartnerStats);
 
+    console.log('Registering /delivery-partner/stats/daily');
+    fastify.get('/delivery-partner/stats/daily', { preHandler: [verifyToken] }, getDeliveryPartnerDailyStats);
+
     console.log('Auth routes registered successfully');
 };
-
