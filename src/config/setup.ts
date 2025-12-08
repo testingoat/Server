@@ -7,6 +7,7 @@ import { dark, light, noSidebar } from '@adminjs/themes';
 import { ComponentLoader } from 'adminjs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import DeliveryConfiguration from '../models/deliveryConfiguration.js';
 
 // Get __dirname equivalent in ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -335,6 +336,27 @@ export const admin = new AdminJS({
                     reject: rejectDeliveryPartnerAction,
                 },
             },
+        },
+        // Delivery Configuration - NEW
+        {
+            resource: DeliveryConfiguration,
+            options: {
+                navigation: {
+                    name: 'Delivery Management',
+                    icon: 'Truck'
+                },
+                listProperties: ['city', 'vehicle_type', 'base_fare', 'extra_per_km', 'surge_multiplier', 'active'],
+                filterProperties: ['city', 'vehicle_type', 'active'],
+                editProperties: ['city', 'vehicle_type', 'base_fare', 'base_distance', 'extra_per_km', 'surge_multiplier', 'max_delivery_distance', 'min_order_value', 'small_order_fee', 'agent_base_payout', 'agent_per_km', 'active'],
+                properties: {
+                    surge_multiplier: {
+                        description: '⚠️ 1.0 = Normal | 1.5 = Rain/Peak | 2.0 = Emergency Only (Hard Cap)'
+                    },
+                    agent_base_payout: {
+                        description: 'Minimum amount paid to the driver per order'
+                    }
+                }
+            }
         },
         // Admin Management
         {

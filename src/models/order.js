@@ -68,6 +68,25 @@ const orderSchema = new mongoose.Schema({
         enum: ['pending_seller_approval', 'seller_rejected', 'available', 'confirmed', 'arriving', 'delivered', 'cancelled'],
         default: 'pending_seller_approval',
     },
+    delivery_charges: {
+        final_fee: { type: Number, required: true },
+        agent_payout: { type: Number, required: true },
+        platform_margin: { type: Number, required: true },
+        applied_config_id: { type: mongoose.Schema.Types.ObjectId, ref: 'DeliveryConfiguration' },
+
+        breakdown: {
+            type: {
+                type: String,
+                enum: ['calculated', 'fallback', 'manual_override'],
+                default: 'calculated'
+            },
+            base_fare: { type: Number, default: 0 },
+            distance_surcharge: { type: Number, default: 0 },
+            small_order_surcharge: { type: Number, default: 0 },
+            surge_applied: { type: Number, default: 1.0 },
+            distance_km: { type: Number, default: 0 }
+        }
+    },
     totalPrice: { type: Number, required: true },
     deliveryFee: { type: Number, default: 0 },
     deliveryPartnerEarnings: { type: Number, default: 0 },

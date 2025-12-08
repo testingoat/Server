@@ -3,6 +3,7 @@ import AdminJSFastify from '@adminjs/fastify';
 import * as AdminJSMongoose from '@adminjs/mongoose';
 import * as Models from '../models/index.js';
 import { Monitoring } from '../models/monitoring.js';
+import DeliveryConfiguration from '../models/deliveryConfiguration.js';
 import { dark, light, noSidebar } from '@adminjs/themes';
 // Register the mongoose adapter
 AdminJS.registerAdapter(AdminJSMongoose);
@@ -148,6 +149,39 @@ export const admin = new AdminJS({
                 showProperties: ['name', 'phone', 'email', 'storeName', 'storeAddress', 'businessHours', 'deliveryAreas', 'isVerified', 'profileCompleted', 'createdAt', 'updatedAt'],
                 editProperties: ['name', 'email', 'storeName', 'storeAddress', 'businessHours', 'deliveryAreas', 'isVerified', 'profileCompleted'],
             },
+        },
+        // Delivery Configuration - NEW
+        {
+            resource: DeliveryConfiguration,
+            options: {
+                navigation: {
+                    name: 'Delivery Management',
+                    icon: 'Truck'
+                },
+                listProperties: ['city', 'vehicle_type', 'base_fare', 'extra_per_km', 'surge_multiplier', 'active'],
+                filterProperties: ['city', 'vehicle_type', 'active'],
+                editProperties: ['city', 'vehicle_type', 'base_fare', 'base_distance', 'extra_per_km', 'surge_multiplier', 'max_delivery_distance', 'min_order_value', 'small_order_fee', 'agent_base_payout', 'agent_per_km', 'active'],
+                properties: {
+                    surge_multiplier: {
+                        components: {
+                            edit: {
+                                props: {
+                                    helpText: '⚠️ 1.0 = Normal | 1.5 = Rain/Peak | 2.0 = Emergency Only (Hard Cap)'
+                                }
+                            }
+                        }
+                    },
+                    agent_base_payout: {
+                        components: {
+                            edit: {
+                                props: {
+                                    helpText: 'Minimum amount paid to the driver per order'
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         },
         // Seller Products Management - NEW
         {
