@@ -1,6 +1,20 @@
 import DeliveryConfiguration from '../models/deliveryConfiguration.js';
 
-const normalizeCity = (city) => (city ? city.trim().toUpperCase() : 'DEFAULT');
+const CITY_ALIASES = {
+    BANGALORE: 'BENGALURU',
+    BENGALORE: 'BENGALURU',
+    BENGALURU: 'BENGALURU',
+    BELGAUM: 'BELAGAVI',
+    BELGAVI: 'BELAGAVI',
+};
+
+const normalizeCity = (city) => {
+    if (!city) {
+        return 'DEFAULT';
+    }
+    const normalized = city.trim().toUpperCase();
+    return CITY_ALIASES[normalized] || normalized;
+};
 
 export const computeDistanceKm = (pickup, drop) => {
     if (!pickup?.latitude || !pickup?.longitude || !drop?.latitude || !drop?.longitude) {
