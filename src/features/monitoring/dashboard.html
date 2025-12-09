@@ -7,7 +7,17 @@
     <title>GoatGoat Server Monitoring</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
-    <script src="/public/vendor/chart.umd.min.js"></script>
+    <script>
+        window.__loadChartFallback = () => {
+            if (window.__chartFallbackLoaded) return;
+            window.__chartFallbackLoaded = true;
+            const fallback = document.createElement('script');
+            fallback.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+            fallback.defer = true;
+            document.head.appendChild(fallback);
+        };
+    </script>
+    <script src="/public/vendor/chart.umd.min.js" onerror="window.__loadChartFallback()"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -756,6 +766,17 @@
                 const logHistoryLimit = 100;
                 let errorPagination = { page: 1, limit: 50, totalPages: 1 };
 
+                if (typeof window.__loadChartFallback !== 'function') {
+                    window.__loadChartFallback = () => {
+                        if (window.__chartFallbackLoaded) return;
+                        window.__chartFallbackLoaded = true;
+                        const fallback = document.createElement('script');
+                        fallback.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+                        fallback.defer = true;
+                        document.head.appendChild(fallback);
+                    };
+                }
+
                 // Centralized fetch wrapper to ensure monitoring cookies flow to every request
                 const authFetch = (url, options = {}) => {
                     return fetch(url, {
@@ -806,6 +827,14 @@
                 };
 
                 function initCharts() {
+                    if (typeof Chart === 'undefined') {
+                        console.warn('Chart.js not available yet. Retrying initialization...');
+                        if (typeof window.__loadChartFallback === 'function') {
+                            window.__loadChartFallback();
+                        }
+                        setTimeout(initCharts, 500);
+                        return;
+                    }
                     // Memory
                       const ctxMem = document.getElementById('memoryChart').getContext('2d');
                     memoryChart = new Chart(ctxMem, {
@@ -813,7 +842,7 @@
                         data: {
                             labels: [],
                             datasets: [{
-                                label: 'Heap Used (MB)',
+                                label: 'Heap Used MB',
                                 borderColor: '#8b5cf6',
                                 backgroundColor: 'rgba(139, 92, 246, 0.1)',
                                 fill: true,
@@ -831,7 +860,7 @@
                         data: {
                             labels: [],
                             datasets: [{
-                                label: 'CPU Usage (%)',
+                                label: 'CPU Usage %',
                                 borderColor: '#3b82f6',
                                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
                                 fill: true,
@@ -899,7 +928,7 @@
                             data: {
                                 labels: [],
                                 datasets: [{
-                                    label: 'Latency (ms)',
+                                    label: 'Latency ms',
                                     borderColor: '#f59e0b',
                                     backgroundColor: 'rgba(245, 158, 11, 0.1)',
                                     fill: true,
