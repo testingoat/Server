@@ -1,5 +1,46 @@
 import { admin } from '../config/firebase-admin.js';
 import { Customer, DeliveryPartner } from '../models/index.js';
+
+const pruneInvalidTokenForModel = async (Model, token, timestamp) => {
+    const docs = await Model.find({
+        $or: [
+            { 'fcmTokens.token': token },
+            { fcmToken: token }
+        ]
+    }).select('fcmTokens fcmToken fcmTokenUpdatedAt');
+
+    if (!docs.length) {
+        return;
+    }
+
+    await Promise.all(
+        docs.map(async (doc) => {
+            const tokenEntries = Array.isArray(doc.fcmTokens) ? doc.fcmTokens : [];
+            const filteredEntries = tokenEntries.filter(entry => entry?.token && entry.token !== token);
+            const tokensChanged = filteredEntries.length !== tokenEntries.length;
+            const primaryChanged = doc.fcmToken === token;
+
+            if (!tokensChanged && !primaryChanged) {
+                return;
+            }
+
+            doc.fcmTokens = filteredEntries;
+            if (primaryChanged) {
+                doc.fcmToken = filteredEntries[0]?.token || null;
+            }
+            doc.fcmTokenUpdatedAt = timestamp;
+            await doc.save();
+        })
+    );
+};
+
+const pruneInvalidUserTokens = async (token) => {
+    const timestamp = new Date();
+    await Promise.all([
+        pruneInvalidTokenForModel(Customer, token, timestamp),
+        pruneInvalidTokenForModel(DeliveryPartner, token, timestamp)
+    ]);
+};
 /**
  * Send push notification to a single FCM token
  */
@@ -84,27 +125,11 @@ export const sendBulkPushNotifications = async (fcmTokens, payload) => {
 
                     const badToken = fcmTokens[idx];
                     try {
-                        console.warn('🧹 Removing invalid FCM token:', badToken.substring(0, 20) + '...', res.error.code);
-
-                        // Remove from Customer and DeliveryPartner collections
-                        await Promise.all([
-                            Customer.updateMany(
-                                { 'fcmTokens.token': badToken },
-                                {
-                                    $pull: { fcmTokens: { token: badToken } },
-                                    $set: { fcmTokenUpdatedAt: new Date() }
-                                }
-                            ),
-                            DeliveryPartner.updateMany(
-                                { 'fcmTokens.token': badToken },
-                                {
-                                    $pull: { fcmTokens: { token: badToken } },
-                                    $set: { fcmTokenUpdatedAt: new Date() }
-                                }
-                            )
-                        ]);
+                        const tokenPreview = (badToken || '').substring(0, 20);
+                        console.warn('[FCM] Removing invalid token:', tokenPreview + '...', res.error.code);
+                        await pruneInvalidUserTokens(badToken);
                     } catch (cleanupError) {
-                        console.error('❌ Failed to prune invalid FCM token:', cleanupError);
+                        console.error('[FCM] Failed to prune invalid FCM token:', cleanupError);
                     }
                 })
             );
