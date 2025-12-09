@@ -16,6 +16,17 @@ const normalizeCity = (city) => {
     return CITY_ALIASES[normalized] || normalized;
 };
 
+const getCityCandidates = (city) => {
+    const normalized = normalizeCity(city);
+    const candidates = new Set([normalized]);
+    Object.entries(CITY_ALIASES).forEach(([alias, canonical]) => {
+        if (canonical === normalized) {
+            candidates.add(alias);
+        }
+    });
+    return Array.from(candidates);
+};
+
 export const computeDistanceKm = (pickup, drop) => {
     if (!pickup?.latitude || !pickup?.longitude || !drop?.latitude || !drop?.longitude) {
         return 0;
@@ -45,15 +56,16 @@ export const resolveCityFromBranch = (branchDoc, fallbackCity = '') => {
  */
 export const calculateDeliveryCharge = async (city, distanceKm, cartValue, vehicleType = 'Bike') => {
     // 1. Find the Rule
+    const cityCandidates = getCityCandidates(city);
     const config = await DeliveryConfiguration.findOne({
-        city: { $regex: new RegExp(`^${city}$`, 'i') }, // Case-insensitive match
+        city: { $in: cityCandidates },
         vehicle_type: vehicleType,
         active: true
     });
 
     // 2. Fallback if no rule exists (Safety Net)
     if (!config) {
-        console.warn(`[DeliveryService] No config found for ${city} (${vehicleType}). Using fallback.`);
+        console.warn(`[DeliveryService] No config found for ${cityCandidates.join(',')} (${vehicleType}). Using fallback.`);
         return {
             final_fee: 40,
             agent_payout: 25,
