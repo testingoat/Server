@@ -40,6 +40,8 @@ const builtinCalls = new Set([
     'Error', 'WebSocket', 'getContext', 'json', 'parseFloat', 'toFixed', 'toLocaleTimeString',
     'toString', 'slice', 'set', 'update', 'remove', 'click', 'close', 'now', 'isArray',
     'add', 'catch', 'rgba', 'var', 'if',
+    'beginPath', 'lineTo', 'moveTo', 'clearRect', 'closePath', 'arc', 'stroke', 'fill',
+    'fillText', 'getBoundingClientRect', 'setTransform', 'scale',
     // Monitoring dashboard helpers / Promise callbacks we allow without explicit function declarations
     'ChartCtor', '__chartCandidateGlobal', 'resolve', 'reject'
 ]);
