@@ -1,8 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { MonitoringService } from './monitoring.service.js';
-
-const monitoringService = new MonitoringService();
+import { monitoringService } from './monitoring.service.js';
 
 export class MonitoringController {
     /**

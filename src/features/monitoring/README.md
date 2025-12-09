@@ -29,12 +29,11 @@ The monitoring routes are automatically registered in `app.ts`:
 // Register monitoring routes from feature-based architecture
 try {
     const { monitoringRoutes } = await import('./features/monitoring/monitoring.routes.js');
-    const { MonitoringService } = await import('./features/monitoring/monitoring.service.js');
+    const { monitoringService } = await import('./features/monitoring/monitoring.service.js');
 
     await app.register(monitoringRoutes);
 
     // Initialize service (starts collector and log interceptor)
-    const monitoringService = new MonitoringService();
     await monitoringService.initialize(app.server);
 
     console.log('✅ Monitoring routes registered successfully (FBA)');

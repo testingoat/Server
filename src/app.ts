@@ -262,8 +262,7 @@ const start = async () => {
 
         // 5. Initialize monitoring service
         try {
-            const { MonitoringService } = await import('./features/monitoring/monitoring.service.js');
-            const monitoringService = new MonitoringService();
+            const { monitoringService } = await import('./features/monitoring/monitoring.service.js');
             await monitoringService.initialize(app.server);
             console.log('✅ Monitoring service initialized');
         } catch (error) {

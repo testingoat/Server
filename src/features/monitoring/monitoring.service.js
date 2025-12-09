@@ -462,3 +462,14 @@ export class MonitoringService {
         }
     }
 }
+
+let monitoringServiceInstance = null;
+
+export function getMonitoringService() {
+    if (!monitoringServiceInstance) {
+        monitoringServiceInstance = new MonitoringService();
+    }
+    return monitoringServiceInstance;
+}
+
+export const monitoringService = getMonitoringService();
