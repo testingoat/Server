@@ -756,6 +756,14 @@
                 const logHistoryLimit = 100;
                 let errorPagination = { page: 1, limit: 50, totalPages: 1 };
 
+                // Centralized fetch wrapper to ensure monitoring cookies flow to every request
+                const authFetch = (url, options = {}) => {
+                    return fetch(url, {
+                        ...options,
+                        credentials: 'include'
+                    });
+                };
+
                 // --- Helper: Get Cookie ---
                 function getCookie(name) {
                     const value = `; ${document.cookie}`;
@@ -906,7 +914,7 @@
 
                 async function updateErrorStatus(id, status) {
                     try {
-                        await fetch(`/admin/monitoring/errors/${id}`, {
+                        await authFetch(`/admin/monitoring/errors/${id}`, {
                             method: 'PATCH',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ status })
@@ -920,7 +928,7 @@
                 async function clearResolvedErrors() {
                     if (!confirm('Clear all resolved errors?')) return;
                     try {
-                        await fetch('/admin/monitoring/errors/clear', { method: 'POST' });
+                        await authFetch('/admin/monitoring/errors/clear', { method: 'POST' });
                         fetchErrors();
                     } catch (err) {
                         console.error(err);
@@ -941,7 +949,7 @@
                     }
 
                     try {
-                        const response = await fetch('/admin/monitoring/backup', { method: 'POST' });
+                        const response = await authFetch('/admin/monitoring/backup', { method: 'POST' });
                         const json = await response.json().catch(() => ({}));
 
                         if (json && json.success) {
@@ -976,7 +984,7 @@
                     if (!confirmed) return;
 
                     try {
-                        const response = await fetch('/admin/monitoring/restart', { method: 'POST' });
+                        const response = await authFetch('/admin/monitoring/restart', { method: 'POST' });
                         const json = await response.json().catch(() => ({}));
 
                         if (json && json.success) {
@@ -996,7 +1004,7 @@
                     if (select.options.length > 1) return; // Already loaded
 
                     try {
-                        const res = await fetch('/admin/monitoring/db/collections');
+                        const res = await authFetch('/admin/monitoring/db/collections');
                         const json = await res.json();
                         if (json.success) {
                             select.innerHTML = '<option value="">Select Collection</option>' +
@@ -1027,7 +1035,7 @@
                             return alert('Invalid JSON query');
                         }
 
-                        const res = await fetch('/admin/monitoring/db/query', {
+                        const res = await authFetch('/admin/monitoring/db/query', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ collection, operation, query })
@@ -1051,7 +1059,7 @@
                 async function fetchData() {
                     try {
                         // Server Metrics
-                        const res = await fetch('/admin/monitoring/metrics');
+                        const res = await authFetch('/admin/monitoring/metrics');
                         const json = await res.json();
                         if (DEBUG) {
                             console.log('Metrics response:', json);
@@ -1063,7 +1071,7 @@
                         }
 
                         // DB Stats
-                        const dbRes = await fetch('/admin/monitoring/db/stats');
+                        const dbRes = await authFetch('/admin/monitoring/db/stats');
                         const dbJson = await dbRes.json();
                         if (DEBUG) {
                             console.log('DB stats response:', dbJson);
@@ -1075,7 +1083,7 @@
                         }
 
                         // Network Stats
-                        const netRes = await fetch('/admin/monitoring/network/stats');
+                        const netRes = await authFetch('/admin/monitoring/network/stats');
                         const netJson = await netRes.json();
                         if (DEBUG) {
                             console.log('Network stats response:', netJson);
@@ -1360,7 +1368,7 @@
                     if (!backupBody) return;
                     backupBody.innerHTML = `<tr><td colspan="4" style="padding: 15px; text-align: center; color: var(--text-muted);">Loading backups...</td></tr>`;
                     try {
-                        const response = await fetch('/admin/monitoring/backups');
+                        const response = await authFetch('/admin/monitoring/backups');
                         const json = await response.json();
                         const backups = Array.isArray(json)
                             ? json
@@ -1407,7 +1415,7 @@
 
                 async function fetchEnvVars() {
                     try {
-                        const response = await fetch('/admin/monitoring/env');
+                        const response = await authFetch('/admin/monitoring/env');
                         const json = await response.json();
                         if (!json.success) throw new Error(json.message || 'Failed to fetch environment variables');
                         envVars = [];
@@ -1473,7 +1481,7 @@
                         params.set('status', statusFilter.value);
                     }
                     try {
-                        const response = await fetch(`/admin/monitoring/errors?${params.toString()}`);
+                        const response = await authFetch(`/admin/monitoring/errors?${params.toString()}`);
                         const json = await response.json();
                         if (!json.success) throw new Error(json.message || 'Failed to fetch errors');
                         const pagination = json.pagination || {};
@@ -1603,7 +1611,7 @@
                 async function saveEnvVars() {
                     const content = envVars.map(env => `${ env.key }=${ env.value } `).join('\n');
                     try {
-                        const response = await fetch('/admin/monitoring/env', {
+                        const response = await authFetch('/admin/monitoring/env', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ content })

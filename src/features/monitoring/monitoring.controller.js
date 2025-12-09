@@ -122,8 +122,11 @@ export class MonitoringController {
             if (!monitoringService.wss) {
                 monitoringService.wss = { clients: new Set() };
             }
-            // Connection is the WebSocket instance in @fastify/websocket
-            const socket = connection;
+            // Extract actual WebSocket from SocketStream helper
+            const socket = connection?.socket || connection;
+            if (!socket || typeof socket.send !== 'function') {
+                throw new Error('Invalid WebSocket connection');
+            }
             console.log('🔌 New WebSocket connection request');
             // Add to clients set
             monitoringService.wss.clients.add(socket);
