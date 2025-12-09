@@ -140,10 +140,89 @@ export class MonitoringService {
     }
 
     /**
+     * Decide which log capture strategy to use
+     */
+    async setupLogCapture() {
+        if (this.isRunningUnderPm2()) {
+            const attached = await this.attachPm2LogBus();
+            if (attached) {
+                console.log('✅ PM2 log bus attached for real-time logs');
+                return;
+            }
+            console.warn('⚠️  PM2 log bus unavailable, falling back to console intercept');
+        }
+        this.interceptConsole();
+    }
+
+    isRunningUnderPm2() {
+        return Boolean(process.env.pm_id || process.env.PM2_HOME || process.env.PM2_PUBLIC_KEY || process.env.PM2_USAGE);
+    }
+
+    async attachPm2LogBus() {
+        try {
+            const pm2Module = await import('pm2');
+            const pm2 = pm2Module.default || pm2Module;
+            const currentPmId = this.getCurrentPmId();
+
+            return await new Promise((resolve) => {
+                pm2.launchBus((err, bus) => {
+                    if (err) {
+                        console.error('⚠️  Failed to connect to PM2 log bus:', err);
+                        return resolve(false);
+                    }
+                    this.pm2Bus = bus;
+                    this.pm2BusConnected = true;
+
+                    const handlePacket = (packet, fallbackLevel = 'INFO') => {
+                        if (!packet || !packet.process) return;
+                        if (currentPmId !== null) {
+                            const packetPmId = Number(packet.process.pm_id);
+                            if (!Number.isNaN(packetPmId) && packetPmId !== currentPmId) {
+                                return;
+                            }
+                        }
+                        const prefix = `[${packet.process.name || 'pm2'}:${packet.process.pm_id}]`;
+                        const data = typeof packet.data === 'string'
+                            ? packet.data
+                            : (packet.data ? packet.data.toString() : '');
+                        const message = `${prefix} ${data}`.trim();
+                        if (!message) return;
+                        this.addLogEntry(fallbackLevel, message);
+                    };
+
+                    bus.on('log:out', (packet) => handlePacket(packet, 'INFO'));
+                    bus.on('log:err', (packet) => handlePacket(packet, 'ERROR'));
+                    bus.on('process:exception', (packet) => handlePacket(packet, 'ERROR'));
+                    bus.on('close', () => {
+                        this.pm2BusConnected = false;
+                        console.warn('⚠️  PM2 log bus disconnected, enabling console intercept fallback');
+                        this.interceptConsole();
+                    });
+
+                    resolve(true);
+                });
+            });
+        } catch (error) {
+            console.error('⚠️  Error attaching PM2 log bus:', error);
+            return false;
+        }
+    }
+
+    getCurrentPmId() {
+        if (typeof process.env.pm_id === 'undefined') {
+            return null;
+        }
+        const parsed = Number(process.env.pm_id);
+        return Number.isNaN(parsed) ? null : parsed;
+    }
+
+    /**
      * Intercept console methods to capture logs
      */
     interceptConsole() {
+        if (this.consoleInterceptActive) return;
         const levels = ['log', 'warn', 'error', 'info'];
+        this.consoleInterceptActive = true;
 
         levels.forEach(level => {
             console[level] = (...args) => {
@@ -174,6 +253,7 @@ export class MonitoringService {
         Object.keys(this.originalConsole).forEach(level => {
             console[level] = this.originalConsole[level];
         });
+        this.consoleInterceptActive = false;
     }
 
     /**

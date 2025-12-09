@@ -2,26 +2,33 @@
 import { Customer, DeliveryPartner, Seller, Notification, CustomerNotification, NotificationLog } from '../../models/index.js';
 import { sendPushNotification, sendBulkPushNotifications } from '../../services/fcmService.js';
 
+const TOKEN_QUERY = {
+    $or: [
+        { 'fcmTokens.0': { $exists: true } },
+        { fcmToken: { $exists: true, $ne: null } }
+    ]
+};
+
 export async function getFCMManagementDashboard(request, reply) {
     try {
         // 1. Fetch Token Counts
-        const customerTokenCount = await Customer.countDocuments({ 'fcmTokens.0': { $exists: true } });
-        const deliveryPartnerTokenCount = await DeliveryPartner.countDocuments({ 'fcmTokens.0': { $exists: true } });
+        const customerTokenCount = await Customer.countDocuments(TOKEN_QUERY);
+        const deliveryPartnerTokenCount = await DeliveryPartner.countDocuments(TOKEN_QUERY);
         let sellerTokenCount = 0;
         try {
             if (Seller) {
-                sellerTokenCount = await Seller.countDocuments({ fcmTokens: { $exists: true, $ne: [] } });
+                sellerTokenCount = await Seller.countDocuments(TOKEN_QUERY);
             }
         } catch (e) { console.log('Seller model not available'); }
         const totalTokens = customerTokenCount + deliveryPartnerTokenCount + sellerTokenCount;
 
         // 2. Fetch Active Tokens
-        const customers = await Customer.find({ 'fcmTokens.0': { $exists: true } })
+        const customers = await Customer.find(TOKEN_QUERY)
             .limit(50)
             .select('name phone email fcmTokens fcmToken createdAt')
             .lean();
-        const sellers = await Seller.find({ fcmTokens: { $exists: true, $ne: [] } }).limit(50).select('storeName phone fcmTokens').lean();
-        const partners = await DeliveryPartner.find({ 'fcmTokens.0': { $exists: true } })
+        const sellers = await Seller.find(TOKEN_QUERY).limit(50).select('storeName phone fcmTokens').lean();
+        const partners = await DeliveryPartner.find(TOKEN_QUERY)
             .limit(50)
             .select('name phone email fcmTokens fcmToken createdAt')
             .lean();
@@ -1120,7 +1127,7 @@ export async function sendToSellers(request, reply) {
 
         if (target === 'all') {
             // Broadcast to all sellers
-            const sellers = await Seller.find({ fcmTokens: { $exists: true, $ne: [] } });
+            const sellers = await Seller.find(TOKEN_QUERY);
             const tokens = sellers.flatMap(s => s.fcmTokens || []).filter(t => t);
 
             if (tokens.length === 0) {
@@ -1205,7 +1212,6 @@ export async function sendToDelivery(request, reply) {
     }
 }
 
-const TOKEN_QUERY = { 'fcmTokens.0': { $exists: true } };
 const mapNotificationType = (incomingType) => {
     switch ((incomingType || '').toLowerCase()) {
         case 'order':
