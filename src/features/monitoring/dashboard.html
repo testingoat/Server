@@ -8,16 +8,39 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
     <script>
-        window.__loadChartFallback = () => {
-            if (window.__chartFallbackLoaded) return;
-            window.__chartFallbackLoaded = true;
-            const fallback = document.createElement('script');
-            fallback.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
-            fallback.defer = true;
-            document.head.appendChild(fallback);
-        };
+        (function () {
+            const CHART_SRC = '/public/vendor/chart.umd.min.js';
+            const loader = {
+                loading: false,
+                retries: 0,
+                maxRetries: 5,
+                load(forceBust = false) {
+                    if (this.loading) return;
+                    this.loading = true;
+                    const script = document.createElement('script');
+                    script.src = `${CHART_SRC}${forceBust ? `?v=${Date.now()}` : ''}`;
+                    script.defer = true;
+                    script.onload = () => {
+                        this.loading = false;
+                        this.retries = 0;
+                    };
+                    script.onerror = () => {
+                        this.loading = false;
+                        this.retries += 1;
+                        if (this.retries < this.maxRetries) {
+                            setTimeout(() => this.load(true), 500 * this.retries);
+                        }
+                    };
+                    document.head.appendChild(script);
+                }
+            };
+            window.__headEnsureChartJs = (forceBust = false) => {
+                if (window.Chart) return;
+                loader.load(forceBust);
+            };
+        })();
     </script>
-    <script src="/public/vendor/chart.umd.min.js" onerror="window.__loadChartFallback()"></script>
+    <script src="/public/vendor/chart.umd.min.js" defer onerror="var f=window['__headEnsureChartJs']; if(f) f(true);"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -766,16 +789,14 @@
                 const logHistoryLimit = 100;
                 let errorPagination = { page: 1, limit: 50, totalPages: 1 };
 
-                if (typeof window.__loadChartFallback !== 'function') {
-                    window.__loadChartFallback = () => {
-                        if (window.__chartFallbackLoaded) return;
-                        window.__chartFallbackLoaded = true;
-                        const fallback = document.createElement('script');
-                        fallback.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
-                        fallback.defer = true;
-                        document.head.appendChild(fallback);
-                    };
+                function __ensureChartJs(forceBust = false) {
+                    const loader = window['__headEnsureChartJs'];
+                    if (typeof loader === 'function') {
+                        loader?.(forceBust);
+                    }
                 }
+
+                __ensureChartJs();
 
                 // Centralized fetch wrapper to ensure monitoring cookies flow to every request
                 const authFetch = (url, options = {}) => {
@@ -829,9 +850,7 @@
                 function initCharts() {
                     if (typeof Chart === 'undefined') {
                         console.warn('Chart.js not available yet. Retrying initialization...');
-                        if (typeof window.__loadChartFallback === 'function') {
-                            window.__loadChartFallback();
-                        }
+                        __ensureChartJs(true);
                         setTimeout(initCharts, 500);
                         return;
                     }
