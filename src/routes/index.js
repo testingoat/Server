@@ -8,6 +8,7 @@ import adminOpsRoutes from '../api/routes/admin/ops.js';
 import { adminFcmRoutes, apiFcmRoutes } from '../features/fcm-dashboard/routes.js';
 import { searchRoutes } from './search.js';
 import { customerNotificationRoutes } from './customerNotifications.js';
+import { customerRoutes } from './customer.js';
 const prefix = '/api';
 export const registerRoutes = async (fastify) => {
     console.log('Registering routes with prefix:', prefix);
@@ -40,6 +41,9 @@ export const registerRoutes = async (fastify) => {
         console.log('Registering customer notification routes...');
         await fastify.register(customerNotificationRoutes, { prefix: prefix });
         console.log('Customer notification routes registered');
+        console.log('Registering customer routes...');
+        await fastify.register(customerRoutes, { prefix: prefix });
+        console.log('Customer routes registered');
         console.log('Registering admin routes...');
         await fastify.register(adminOpsRoutes, { prefix: '/admin' });
         console.log('Admin routes registered');

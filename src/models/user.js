@@ -32,6 +32,23 @@ const customerSchema = new mongoose.Schema({
         longitude: { type: Number },
     },
     address: { type: String },
+    addresses: [
+        {
+            _id: { type: mongoose.Schema.Types.ObjectId, default: () => new mongoose.Types.ObjectId() },
+            label: { type: String, trim: true, default: 'Home' },
+            houseNumber: { type: String, required: true },
+            street: { type: String, required: true },
+            landmark: { type: String },
+            city: { type: String, required: true, uppercase: true },
+            state: { type: String },
+            pincode: { type: String },
+            latitude: { type: Number, required: true },
+            longitude: { type: Number, required: true },
+            isDefault: { type: Boolean, default: false },
+            createdAt: { type: Date, default: Date.now },
+            updatedAt: { type: Date, default: Date.now },
+        }
+    ],
 }, {
     timestamps: true
 })

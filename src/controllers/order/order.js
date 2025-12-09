@@ -1,15 +1,23 @@
+import mongoose from 'mongoose';
 import Order from '../../models/order.js';
 import Branch from '../../models/branch.js';
 import { Customer, DeliveryPartner } from '../../models/user.js';
 import { calculateDeliveryCharge, computeDistanceKm, resolveCityFromBranch } from '../../services/delivery.service.js';
+
+const resolveAddressForCustomer = (customer, addressId) => {
+    if (!addressId) {
+        return null;
+    }
+    if (!mongoose.Types.ObjectId.isValid(addressId)) {
+        return 'INVALID';
+    }
+    const address = customer?.addresses?.id(addressId);
+    return address || null;
+};
 export const createOrder = async (req, reply) => {
     try {
         const { userId } = req.user;
-        const { items, branch, totalPrice, deliveryLocation } = req.body;
-        // Validate required fields
-        if (!deliveryLocation || deliveryLocation.latitude === undefined || deliveryLocation.longitude === undefined) {
-            return reply.status(400).send({ message: 'Delivery location with latitude and longitude is required' });
-        }
+        const { items, branch, totalPrice, deliveryLocation, addressId } = req.body;
         const customerData = await Customer.findById(userId);
         const branchData = await Branch.findById(branch).populate('seller');
         if (!customerData) {
@@ -25,12 +33,43 @@ export const createOrder = async (req, reply) => {
         if (!branchData.location?.latitude || !branchData.location?.longitude) {
             return reply.status(400).send({ message: 'Branch location is not configured properly' });
         }
+        let resolvedDeliveryLocation = deliveryLocation;
+        let deliveryAddressSnapshot = null;
+        if (addressId) {
+            const addressDoc = resolveAddressForCustomer(customerData, addressId);
+            if (addressDoc === 'INVALID') {
+                return reply.status(400).send({ code: 'ADDRESS_INVALID', message: 'Invalid address id' });
+            }
+            if (!addressDoc) {
+                return reply.status(404).send({ code: 'ADDRESS_NOT_FOUND', message: 'Address not found' });
+            }
+            if (addressDoc.latitude === undefined || addressDoc.longitude === undefined) {
+                return reply.status(400).send({ code: 'ADDRESS_COORDS_MISSING', message: 'Selected address is missing coordinates' });
+            }
+            resolvedDeliveryLocation = {
+                latitude: addressDoc.latitude,
+                longitude: addressDoc.longitude,
+            };
+            deliveryAddressSnapshot = {
+                addressId: addressDoc._id,
+                label: addressDoc.label,
+                houseNumber: addressDoc.houseNumber,
+                street: addressDoc.street,
+                landmark: addressDoc.landmark,
+                city: addressDoc.city,
+                state: addressDoc.state,
+                pincode: addressDoc.pincode,
+            };
+        }
+        if (!resolvedDeliveryLocation || resolvedDeliveryLocation.latitude === undefined || resolvedDeliveryLocation.longitude === undefined) {
+            return reply.status(400).send({ message: 'Delivery location with latitude and longitude is required' });
+        }
         const pickupLocation = {
             latitude: branchData.location.latitude,
             longitude: branchData.location.longitude,
             address: branchData.address || 'No address available',
         };
-        const distanceKm = computeDistanceKm(pickupLocation, deliveryLocation);
+        const distanceKm = computeDistanceKm(pickupLocation, resolvedDeliveryLocation);
         const resolvedCity = resolveCityFromBranch(branchData);
         const pricing = await calculateDeliveryCharge(resolvedCity, distanceKm, totalPrice || 0, 'Bike');
         if (pricing?.error === 'DISTANCE_EXCEEDED') {
@@ -66,14 +105,17 @@ export const createOrder = async (req, reply) => {
             branch,
             totalPrice,
             deliveryLocation: {
-                latitude: deliveryLocation.latitude,
-                longitude: deliveryLocation.longitude,
-                address: customerData.address || 'No address available',
+                latitude: resolvedDeliveryLocation.latitude,
+                longitude: resolvedDeliveryLocation.longitude,
+                address: deliveryAddressSnapshot
+                    ? `${deliveryAddressSnapshot.houseNumber || ''} ${deliveryAddressSnapshot.street || ''}`.trim() || 'Saved address'
+                    : customerData.address || 'No address available',
             },
             pickupLocation,
             delivery_charges: deliveryCharges,
             deliveryFee: deliveryCharges.final_fee,
             deliveryPartnerEarnings: deliveryCharges.agent_payout,
+            deliveryAddressSnapshot,
             // Order starts with pending_seller_approval status (default from model)
         });
         let savedOrder = await newOrder.save();
@@ -100,9 +142,10 @@ export const createOrder = async (req, reply) => {
 
 export const quoteOrder = async (req, reply) => {
     try {
-        const { branchId, deliveryLocation, cartValue = 0, vehicleType = 'Bike' } = req.body;
-        if (!branchId || !deliveryLocation?.latitude || !deliveryLocation?.longitude) {
-            return reply.status(400).send({ message: 'branchId and deliveryLocation are required' });
+        const { userId } = req.user;
+        const { branchId, deliveryLocation, cartValue = 0, vehicleType = 'Bike', addressId } = req.body;
+        if (!branchId) {
+            return reply.status(400).send({ message: 'branchId is required' });
         }
         const branchData = await Branch.findById(branchId).populate('seller');
         if (!branchData) {
@@ -111,11 +154,32 @@ export const quoteOrder = async (req, reply) => {
         if (!branchData.location?.latitude || !branchData.location?.longitude) {
             return reply.status(400).send({ message: 'Branch location is not configured properly' });
         }
+        let resolvedDeliveryLocation = deliveryLocation;
+        if (addressId) {
+            const customer = await Customer.findById(userId);
+            if (!customer) {
+                return reply.status(404).send({ message: 'Customer not found' });
+            }
+            const addressDoc = resolveAddressForCustomer(customer, addressId);
+            if (addressDoc === 'INVALID') {
+                return reply.status(400).send({ code: 'ADDRESS_INVALID', message: 'Invalid address id' });
+            }
+            if (!addressDoc) {
+                return reply.status(404).send({ code: 'ADDRESS_NOT_FOUND', message: 'Address not found' });
+            }
+            resolvedDeliveryLocation = {
+                latitude: addressDoc.latitude,
+                longitude: addressDoc.longitude,
+            };
+        }
+        if (!resolvedDeliveryLocation?.latitude || !resolvedDeliveryLocation?.longitude) {
+            return reply.status(400).send({ message: 'deliveryLocation coordinates are required' });
+        }
         const pickupLocation = {
             latitude: branchData.location.latitude,
             longitude: branchData.location.longitude,
         };
-        const distanceKm = computeDistanceKm(pickupLocation, deliveryLocation);
+        const distanceKm = computeDistanceKm(pickupLocation, resolvedDeliveryLocation);
         const resolvedCity = resolveCityFromBranch(branchData);
         const pricing = await calculateDeliveryCharge(resolvedCity, distanceKm, cartValue, vehicleType);
         if (pricing?.error === 'DISTANCE_EXCEEDED') {

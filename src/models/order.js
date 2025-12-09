@@ -54,6 +54,16 @@ const orderSchema = new mongoose.Schema({
         longitude: { type: Number },
         address: { type: String },
     },
+    deliveryAddressSnapshot: {
+        addressId: { type: mongoose.Schema.Types.ObjectId },
+        label: { type: String },
+        houseNumber: { type: String },
+        street: { type: String },
+        landmark: { type: String },
+        city: { type: String },
+        state: { type: String },
+        pincode: { type: String },
+    },
     sellerResponse: {
         status: {
             type: String,
