@@ -70,7 +70,11 @@ export const createOrder = async (req, reply) => {
             address: branchData.address || 'No address available',
         };
         const distanceKm = computeDistanceKm(pickupLocation, resolvedDeliveryLocation);
-        const resolvedCity = resolveCityFromBranch(branchData);
+        const customerFallbackCity = deliveryAddressSnapshot?.city ||
+            customerData?.addresses?.find((addr) => addr.isDefault)?.city ||
+            customerData?.addresses?.[0]?.city ||
+            null;
+        const resolvedCity = resolveCityFromBranch(branchData, customerFallbackCity);
         const pricing = await calculateDeliveryCharge(resolvedCity, distanceKm, totalPrice || 0, 'Bike');
         if (pricing?.error === 'DISTANCE_EXCEEDED') {
             return reply.status(400).send({
@@ -155,12 +159,13 @@ export const quoteOrder = async (req, reply) => {
             return reply.status(400).send({ message: 'Branch location is not configured properly' });
         }
         let resolvedDeliveryLocation = deliveryLocation;
+        let addressDoc = null;
         if (addressId) {
             const customer = await Customer.findById(userId);
             if (!customer) {
                 return reply.status(404).send({ message: 'Customer not found' });
             }
-            const addressDoc = resolveAddressForCustomer(customer, addressId);
+            addressDoc = resolveAddressForCustomer(customer, addressId);
             if (addressDoc === 'INVALID') {
                 return reply.status(400).send({ code: 'ADDRESS_INVALID', message: 'Invalid address id' });
             }
@@ -180,7 +185,8 @@ export const quoteOrder = async (req, reply) => {
             longitude: branchData.location.longitude,
         };
         const distanceKm = computeDistanceKm(pickupLocation, resolvedDeliveryLocation);
-        const resolvedCity = resolveCityFromBranch(branchData);
+        const fallbackCity = addressDoc?.city || null;
+        const resolvedCity = resolveCityFromBranch(branchData, fallbackCity);
         const pricing = await calculateDeliveryCharge(resolvedCity, distanceKm, cartValue, vehicleType);
         if (pricing?.error === 'DISTANCE_EXCEEDED') {
             return reply.status(400).send({
