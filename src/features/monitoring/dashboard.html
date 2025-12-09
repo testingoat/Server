@@ -7,6 +7,7 @@
     <title>GoatGoat Server Monitoring</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
+    <script src="/public/vendor/chart.umd.min.js"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -754,155 +755,6 @@
                 let reconnectTimer = null;
                 const logHistoryLimit = 100;
                 let errorPagination = { page: 1, limit: 50, totalPages: 1 };
-                let chartResizeTimer = null;
-
-                function prepareChartCanvas(chart) {
-                    if (!chart || !chart.canvas || !chart.ctx) {
-                        return { width: 0, height: 0 };
-                    }
-                    const rect = chart.canvas.getBoundingClientRect();
-                    if (!rect.width || !rect.height) {
-                        return { width: 0, height: 0 };
-                    }
-                    const dpr = window.devicePixelRatio || 1;
-                    const renderWidth = Math.round(rect.width * dpr);
-                    const renderHeight = Math.round(rect.height * dpr);
-                    if (chart.canvas.width !== renderWidth || chart.canvas.height !== renderHeight) {
-                        chart.canvas.width = renderWidth;
-                        chart.canvas.height = renderHeight;
-                    }
-                    chart.ctx.setTransform(1, 0, 0, 1, 0, 0);
-                    chart.ctx.scale(dpr, dpr);
-                    return { width: rect.width, height: rect.height };
-                }
-
-                function createLineChart(canvas, options = {}) {
-                    if (!canvas) return null;
-                    return {
-                        canvas,
-                        ctx: canvas.getContext('2d'),
-                        color: options.color || '#8b5cf6',
-                        fillColor: options.fillColor || 'rgba(139, 92, 246, 0.1)',
-                        maxPoints: options.maxPoints || maxDataPoints || 30,
-                        data: []
-                    };
-                }
-
-                function addPointToLineChart(chart, label, value) {
-                    if (!chart || !chart.ctx) return;
-                    chart.data.push({ label, value: Number(value) || 0 });
-                    if (chart.data.length > chart.maxPoints) {
-                        chart.data.shift();
-                    }
-                    drawLineChart(chart);
-                }
-
-                function drawLineChart(chart) {
-                    if (!chart || !chart.ctx) return;
-                    const canvasSize = prepareChartCanvas(chart);
-                    const width = canvasSize.width;
-                    const height = canvasSize.height;
-                    if (!width || !height) return;
-
-                    const ctx = chart.ctx;
-                    ctx.clearRect(0, 0, width, height);
-
-                    const padding = 16;
-                    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(padding, height - padding);
-                    ctx.lineTo(width - padding, height - padding);
-                    ctx.stroke();
-
-                    if (!chart.data.length) return;
-
-                    const values = chart.data.map(point => point.value);
-                    const minVal = Math.min(...values, 0);
-                    const maxVal = Math.max(...values, 1);
-                    const span = maxVal - minVal || 1;
-                    const drawableHeight = Math.max(height - padding * 2, 1);
-                    const stepX = chart.data.length > 1 ? (width - padding * 2) / (chart.data.length - 1) : 0;
-
-                    ctx.beginPath();
-                    chart.data.forEach((point, index) => {
-                        const x = padding + index * stepX;
-                        const normalized = (point.value - minVal) / span;
-                        const y = height - padding - normalized * drawableHeight;
-                        if (index === 0) {
-                            ctx.moveTo(x, y);
-                        } else {
-                            ctx.lineTo(x, y);
-                        }
-                    });
-                    ctx.lineWidth = 2;
-                    ctx.strokeStyle = chart.color;
-                    ctx.stroke();
-
-                    const lastX = padding + (chart.data.length - 1) * stepX;
-                    ctx.lineTo(lastX, height - padding);
-                    ctx.lineTo(padding, height - padding);
-                    ctx.closePath();
-                    ctx.fillStyle = chart.fillColor;
-                    ctx.fill();
-                }
-
-                function createDoughnutChart(canvas, options = {}) {
-                    if (!canvas) return null;
-                    return {
-                        canvas,
-                        ctx: canvas.getContext('2d'),
-                        colors: options.colors || ['#8b5cf6', '#3b82f6', '#10b981'],
-                        values: [0, 0, 0]
-                    };
-                }
-
-                function setDoughnutValues(chart, values = []) {
-                    if (!chart || !chart.ctx) return;
-                    chart.values = values.map(value => Math.max(0, Number(value) || 0));
-                    drawDoughnutChart(chart);
-                }
-
-                function drawDoughnutChart(chart) {
-                    if (!chart || !chart.ctx) return;
-                    const canvasSize = prepareChartCanvas(chart);
-                    const width = canvasSize.width;
-                    const height = canvasSize.height;
-                    if (!width || !height) return;
-                    const ctx = chart.ctx;
-                    ctx.clearRect(0, 0, width, height);
-                    const total = chart.values.reduce((sum, value) => sum + value, 0) || 1;
-                    const centerX = width / 2;
-                    const centerY = height / 2;
-                    const radius = Math.min(width, height) / 2 - 10;
-                    let startAngle = -Math.PI / 2;
-                    chart.values.forEach((value, index) => {
-                        const sliceAngle = (value / total) * Math.PI * 2;
-                        ctx.beginPath();
-                        ctx.moveTo(centerX, centerY);
-                        ctx.arc(centerX, centerY, radius, startAngle, startAngle + sliceAngle);
-                        ctx.closePath();
-                        ctx.fillStyle = chart.colors[index % chart.colors.length];
-                        ctx.fill();
-                        startAngle += sliceAngle;
-                    });
-                    ctx.beginPath();
-                    ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
-                    ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
-                    ctx.fill();
-                    ctx.fillStyle = '#94a3b8';
-                    ctx.font = '12px Poppins, sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('Storage', centerX, centerY + 4);
-                }
-
-                window.addEventListener('resize', () => {
-                    clearTimeout(chartResizeTimer);
-                    chartResizeTimer = setTimeout(() => {
-                        [memoryChart, cpuChart, netRpsChart, netLatencyChart].forEach(chart => drawLineChart(chart));
-                        drawDoughnutChart(dbStorageChart);
-                    }, 150);
-                });
 
                 // Centralized fetch wrapper to ensure monitoring cookies flow to every request
                 const authFetch = (url, options = {}) => {
@@ -939,51 +791,127 @@
                     if (tabId === 'settings') fetchEnvVars();
                 }
 
+                // --- Charts Initialization ---
+                const commonOptions = {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#94a3b8' }, beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                };
+
                 function initCharts() {
-                    const memoryCanvas = document.getElementById('memoryChart');
-                    if (memoryCanvas) {
-                        memoryChart = createLineChart(memoryCanvas, {
-                            color: '#8b5cf6',
-                            fillColor: 'rgba(139, 92, 246, 0.1)',
-                            maxPoints: maxDataPoints
+                    if (typeof Chart === 'undefined') {
+                        console.warn('Chart.js not yet available');
+                        return;
+                    }
+                    // Memory
+                      const ctxMem = document.getElementById('memoryChart').getContext('2d');
+                    memoryChart = new Chart(ctxMem, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [{
+                                label: 'Heap Used MB',
+                                borderColor: '#8b5cf6',
+                                backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                                fill: true,
+                                data: [],
+                                tension: 0.4
+                            }]
+                        },
+                        options: commonOptions
+                    });
+
+                    // CPU
+                      const ctxCpu = document.getElementById('cpuChart').getContext('2d');
+                    cpuChart = new Chart(ctxCpu, {
+                        type: 'line',
+                        data: {
+                            labels: [],
+                            datasets: [{
+                                label: 'CPU Usage %',
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                fill: true,
+                                data: [],
+                                tension: 0.4
+                            }]
+                        },
+                        options: commonOptions
+                    });
+
+                      const ctxDbStorage = document.getElementById('dbStorageChart');
+                      if (ctxDbStorage) {
+                          dbStorageChart = new Chart(ctxDbStorage.getContext('2d'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Data Size', 'Index Size', 'Free Space'],
+                                datasets: [{
+                                    data: [0, 0, 0],
+                                    backgroundColor: [
+                                        'rgba(139, 92, 246, 0.8)',
+                                        'rgba(59, 130, 246, 0.8)',
+                                        'rgba(16, 185, 129, 0.8)'
+                                    ],
+                                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                                    borderWidth: 1
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                plugins: {
+                                    legend: {
+                                        display: true,
+                                        position: 'bottom',
+                                        labels: { color: '#94a3b8' }
+                                    }
+                                }
+                            }
                         });
                     }
 
-                    const cpuCanvas = document.getElementById('cpuChart');
-                    if (cpuCanvas) {
-                        cpuChart = createLineChart(cpuCanvas, {
-                            color: '#3b82f6',
-                            fillColor: 'rgba(59, 130, 246, 0.1)',
-                            maxPoints: maxDataPoints
+                      const ctxNetRps = document.getElementById('netRpsChart');
+                      if (ctxNetRps) {
+                        netRpsChart = new Chart(ctxNetRps.getContext('2d'), {
+                            type: 'line',
+                            data: {
+                                labels: [],
+                                datasets: [{
+                                    label: 'Requests/sec',
+                                    borderColor: '#10b981',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                    fill: true,
+                                    data: [],
+                                    tension: 0.4
+                                }]
+                            },
+                            options: commonOptions
                         });
                     }
 
-                    const dbCanvas = document.getElementById('dbStorageChart');
-                    if (dbCanvas) {
-                        dbStorageChart = createDoughnutChart(dbCanvas, {
-                            colors: [
-                                'rgba(139, 92, 246, 0.8)',
-                                'rgba(59, 130, 246, 0.8)',
-                                'rgba(16, 185, 129, 0.8)'
-                            ]
-                        });
-                    }
-
-                    const rpsCanvas = document.getElementById('netRpsChart');
-                    if (rpsCanvas) {
-                        netRpsChart = createLineChart(rpsCanvas, {
-                            color: '#10b981',
-                            fillColor: 'rgba(16, 185, 129, 0.1)',
-                            maxPoints: maxDataPoints
-                        });
-                    }
-
-                    const latencyCanvas = document.getElementById('netLatencyChart');
-                    if (latencyCanvas) {
-                        netLatencyChart = createLineChart(latencyCanvas, {
-                            color: '#f59e0b',
-                            fillColor: 'rgba(245, 158, 11, 0.1)',
-                            maxPoints: maxDataPoints
+                      const ctxNetLatency = document.getElementById('netLatencyChart');
+                      if (ctxNetLatency) {
+                        netLatencyChart = new Chart(ctxNetLatency.getContext('2d'), {
+                            type: 'line',
+                            data: {
+                                labels: [],
+                                datasets: [{
+                                    label: 'Latency ms',
+                                    borderColor: '#f59e0b',
+                                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                                    fill: true,
+                                    data: [],
+                                    tension: 0.4
+                                }]
+                            },
+                            options: commonOptions
                         });
                     }
                 }
@@ -1271,9 +1199,10 @@
                     if (dbStorageChart) {
                         const dataSize = storage.dataSize || 0;
                         const indexSize = storage.indexSize || 0;
-                        const storageSize = storage.storageSize || dataSize + indexSize;
+                        const storageSize = storage.storageSize || 0;
                         const freeSpace = Math.max(storageSize - dataSize - indexSize, 0);
-                        setDoughnutValues(dbStorageChart, [dataSize, indexSize, freeSpace]);
+                        dbStorageChart.data.datasets[0].data = [dataSize, indexSize, freeSpace];
+                        dbStorageChart.update();
                     }
 
                     renderCollections(collections);
@@ -1331,7 +1260,19 @@
                 // NOTE: fetchData, updateDashboard, updateDbStats, updateNetworkStats are defined once above.
 
                 function addDataToChart(chart, label, data) {
-                    addPointToLineChart(chart, label, data);
+                    chart.data.labels.push(label);
+                    chart.data.datasets.forEach((dataset) => {
+                        dataset.data.push(data);
+                    });
+
+                    if (chart.data.labels.length > maxDataPoints) {
+                        chart.data.labels.shift();
+                        chart.data.datasets.forEach((dataset) => {
+                            dataset.data.shift();
+                        });
+                    }
+
+                    chart.update();
                 }
 
                 function connectWebSocket() {
