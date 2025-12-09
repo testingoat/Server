@@ -1,14 +1,35 @@
 import DeliveryConfiguration from '../models/deliveryConfiguration.js';
 
+const normalizeCity = (city) => (city ? city.trim().toUpperCase() : 'DEFAULT');
+
+export const computeDistanceKm = (pickup, drop) => {
+    if (!pickup?.latitude || !pickup?.longitude || !drop?.latitude || !drop?.longitude) {
+        return 0;
+    }
+    const toRad = (value) => (value * Math.PI) / 180;
+    const R = 6371; // Earth radius in km
+    const dLat = toRad(drop.latitude - pickup.latitude);
+    const dLon = toRad(drop.longitude - pickup.longitude);
+    const lat1 = toRad(pickup.latitude);
+    const lat2 = toRad(drop.latitude);
+    const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return Number((R * c).toFixed(2));
+};
+
+export const resolveCityFromBranch = (branchDoc, fallbackCity = '') => {
+    if (!branchDoc) {
+        return normalizeCity(fallbackCity);
+    }
+    const inferredCity = branchDoc.city || branchDoc?.seller?.city || fallbackCity || 'DEFAULT';
+    return normalizeCity(inferredCity);
+};
+
 /**
  * Calculates delivery charges based on city, distance, and cart value.
- * @param {string} city - The city name.
- * @param {number} distanceKm - The distance in kilometers.
- * @param {number} cartValue - The total value of the cart.
- * @param {string} vehicleType - The type of vehicle (default: 'Bike').
- * @returns {Promise<Object>} The calculation result with breakdown.
  */
-exports.calculateDeliveryCharge = async (city, distanceKm, cartValue, vehicleType = 'Bike') => {
+export const calculateDeliveryCharge = async (city, distanceKm, cartValue, vehicleType = 'Bike') => {
     // 1. Find the Rule
     const config = await DeliveryConfiguration.findOne({
         city: { $regex: new RegExp(`^${city}$`, 'i') }, // Case-insensitive match
@@ -24,6 +45,7 @@ exports.calculateDeliveryCharge = async (city, distanceKm, cartValue, vehicleTyp
             agent_payout: 25,
             platform_margin: 15,
             currency: 'INR',
+            applied_config_id: null,
             breakdown: {
                 type: 'fallback',
                 base_fare: 40,

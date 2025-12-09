@@ -1,6 +1,7 @@
 import Order from '../../models/order.js';
 import Branch from '../../models/branch.js';
 import { Customer, DeliveryPartner } from '../../models/user.js';
+import { calculateDeliveryCharge, computeDistanceKm, resolveCityFromBranch } from '../../services/delivery.service.js';
 export const createOrder = async (req, reply) => {
     try {
         const { userId } = req.user;
@@ -21,6 +22,39 @@ export const createOrder = async (req, reply) => {
         if (!branchData.seller) {
             return reply.status(400).send({ message: 'Branch does not have a seller assigned' });
         }
+        if (!branchData.location?.latitude || !branchData.location?.longitude) {
+            return reply.status(400).send({ message: 'Branch location is not configured properly' });
+        }
+        const pickupLocation = {
+            latitude: branchData.location.latitude,
+            longitude: branchData.location.longitude,
+            address: branchData.address || 'No address available',
+        };
+        const distanceKm = computeDistanceKm(pickupLocation, deliveryLocation);
+        const resolvedCity = resolveCityFromBranch(branchData);
+        const pricing = await calculateDeliveryCharge(resolvedCity, distanceKm, totalPrice || 0, 'Bike');
+        if (pricing?.error === 'DISTANCE_EXCEEDED') {
+            return reply.status(400).send({
+                code: pricing.error,
+                message: pricing.message,
+                maxDistance: pricing.max_distance,
+                distance_km: distanceKm,
+            });
+        }
+        const deliveryCharges = {
+            final_fee: pricing.final_fee,
+            agent_payout: pricing.agent_payout,
+            platform_margin: pricing.platform_margin,
+            applied_config_id: pricing.applied_config_id || null,
+            breakdown: {
+                type: pricing.breakdown?.type || (pricing.applied_config_id ? 'calculated' : 'fallback'),
+                base_fare: pricing.breakdown?.base_fare ?? 0,
+                distance_surcharge: pricing.breakdown?.distance_surcharge ?? 0,
+                small_order_surcharge: pricing.breakdown?.small_order_surcharge ?? 0,
+                surge_applied: pricing.breakdown?.surge_applied ?? 1.0,
+                distance_km: pricing.breakdown?.distance_km ?? distanceKm,
+            },
+        };
         const newOrder = new Order({
             customer: userId,
             seller: branchData.seller._id, // Set seller from branch relationship
@@ -36,11 +70,10 @@ export const createOrder = async (req, reply) => {
                 longitude: deliveryLocation.longitude,
                 address: customerData.address || 'No address available',
             },
-            pickupLocation: {
-                latitude: branchData.location.latitude,
-                longitude: branchData.location.longitude,
-                address: branchData.address || 'No address available',
-            },
+            pickupLocation,
+            delivery_charges: deliveryCharges,
+            deliveryFee: deliveryCharges.final_fee,
+            deliveryPartnerEarnings: deliveryCharges.agent_payout,
             // Order starts with pending_seller_approval status (default from model)
         });
         let savedOrder = await newOrder.save();
@@ -62,6 +95,50 @@ export const createOrder = async (req, reply) => {
             return reply.status(400).send({ message: 'Order validation failed', error: error.message });
         }
         return reply.status(500).send({ message: 'Failed to create order', error });
+    }
+};
+
+export const quoteOrder = async (req, reply) => {
+    try {
+        const { branchId, deliveryLocation, cartValue = 0, vehicleType = 'Bike' } = req.body;
+        if (!branchId || !deliveryLocation?.latitude || !deliveryLocation?.longitude) {
+            return reply.status(400).send({ message: 'branchId and deliveryLocation are required' });
+        }
+        const branchData = await Branch.findById(branchId).populate('seller');
+        if (!branchData) {
+            return reply.status(404).send({ message: 'Branch not found' });
+        }
+        if (!branchData.location?.latitude || !branchData.location?.longitude) {
+            return reply.status(400).send({ message: 'Branch location is not configured properly' });
+        }
+        const pickupLocation = {
+            latitude: branchData.location.latitude,
+            longitude: branchData.location.longitude,
+        };
+        const distanceKm = computeDistanceKm(pickupLocation, deliveryLocation);
+        const resolvedCity = resolveCityFromBranch(branchData);
+        const pricing = await calculateDeliveryCharge(resolvedCity, distanceKm, cartValue, vehicleType);
+        if (pricing?.error === 'DISTANCE_EXCEEDED') {
+            return reply.status(400).send({
+                code: pricing.error,
+                message: pricing.message,
+                maxDistance: pricing.max_distance,
+                distance_km: distanceKm,
+            });
+        }
+        return reply.send({
+            ...pricing,
+            city: resolvedCity,
+            distance_km: distanceKm,
+            breakdown: {
+                ...pricing.breakdown,
+                distance_km: pricing.breakdown?.distance_km ?? distanceKm,
+            },
+        });
+    }
+    catch (error) {
+        console.log(error);
+        return reply.status(500).send({ message: 'Failed to calculate delivery quote', error });
     }
 };
 export const confirmOrder = async (req, reply) => {

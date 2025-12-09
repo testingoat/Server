@@ -1,4 +1,4 @@
-import { confirmOrder, createOrder, getOrderById, getOrders, updateOrderStatus, } from '../controllers/order/order.js';
+import { confirmOrder, createOrder, getOrderById, getOrders, quoteOrder, updateOrderStatus, } from '../controllers/order/order.js';
 import { estimateEtaForLocation } from '../controllers/order/eta.js';
 import { verifyToken } from '../middleware/auth.js';
 export const orderRoutes = async (fastify, options) => {
@@ -9,6 +9,7 @@ export const orderRoutes = async (fastify, options) => {
         }
     });
     fastify.post('/order', createOrder);
+    fastify.post('/order/quote', quoteOrder);
     fastify.get('/order', getOrders);
     fastify.patch('/order/:orderId/status', updateOrderStatus);
     fastify.post('/order/:orderId/confirm', confirmOrder);
