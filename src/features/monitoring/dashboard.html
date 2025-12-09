@@ -10,37 +10,51 @@
     <script>
         (function () {
             const CHART_SRC = '/public/vendor/chart.umd.min.js';
-            const loader = {
+            const state = {
                 loading: false,
+                loaded: false,
                 retries: 0,
                 maxRetries: 5,
-                load(forceBust = false) {
-                    if (this.loading) return;
-                    this.loading = true;
-                    const script = document.createElement('script');
-                    script.src = `${CHART_SRC}${forceBust ? `?v=${Date.now()}` : ''}`;
-                    script.defer = true;
-                    script.onload = () => {
-                        this.loading = false;
-                        this.retries = 0;
-                    };
-                    script.onerror = () => {
-                        this.loading = false;
-                        this.retries += 1;
-                        if (this.retries < this.maxRetries) {
-                            setTimeout(() => this.load(true), 500 * this.retries);
-                        }
-                    };
-                    document.head.appendChild(script);
-                }
+                pending: []
             };
-            window.__headEnsureChartJs = (forceBust = false) => {
-                if (window.Chart) return;
-                loader.load(forceBust);
+
+            function inject(forceBust = false) {
+                if (state.loading || state.loaded) return;
+                state.loading = true;
+                const script = document.createElement('script');
+                script.src = `${CHART_SRC}${forceBust ? `?v=${Date.now()}` : ''}`;
+                script.defer = true;
+                script.onload = () => {
+                    state.loading = false;
+                    state.loaded = true;
+                    const callbacks = state.pending.splice(0);
+                    callbacks.forEach(({ resolve }) => resolve());
+                };
+                script.onerror = () => {
+                    state.loading = false;
+                    state.retries += 1;
+                    if (state.retries >= state.maxRetries) {
+                        const error = new Error('Chart.js failed to load');
+                        const callbacks = state.pending.splice(0);
+                        callbacks.forEach(({ reject }) => reject(error));
+                    } else {
+                        setTimeout(() => inject(true), 500 * state.retries);
+                    }
+                };
+                document.head.appendChild(script);
+            }
+
+            window.__ensureChartJsReady = () => {
+                if (window.Chart || state.loaded) return Promise.resolve();
+                return new Promise((resolve, reject) => {
+                    state.pending.push({ resolve, reject });
+                    inject(state.retries > 0);
+                });
             };
+
+            inject(false);
         })();
     </script>
-    <script src="/public/vendor/chart.umd.min.js" defer onerror="var f=window['__headEnsureChartJs']; if(f) f(true);"></script>
     <style>
         :root {
             --bg-color: #0f172a;
@@ -790,13 +804,14 @@
                 let errorPagination = { page: 1, limit: 50, totalPages: 1 };
 
                 function __ensureChartJs(forceBust = false) {
-                    const loader = window['__headEnsureChartJs'];
-                    if (typeof loader === 'function') {
-                        loader?.(forceBust);
+                    const chartLoader = window['__ensureChartJsReady'];
+                    if (typeof chartLoader === 'function') {
+                        return chartLoader?.(forceBust);
                     }
+                    return Promise.reject(new Error('Chart.js loader is unavailable'));
                 }
 
-                __ensureChartJs();
+                __ensureChartJs().catch(() => { });
 
                 // Centralized fetch wrapper to ensure monitoring cookies flow to every request
                 const authFetch = (url, options = {}) => {
@@ -847,11 +862,18 @@
                     }
                 };
 
-                function initCharts() {
+                async function initCharts() {
                     if (typeof Chart === 'undefined') {
-                        console.warn('Chart.js not available yet. Retrying initialization...');
-                        __ensureChartJs(true);
-                        setTimeout(initCharts, 500);
+                        console.warn('Chart.js not available yet. Waiting for loader...');
+                        try {
+                            await __ensureChartJs(true);
+                        } catch (err) {
+                            console.error('Failed to load Chart.js:', err);
+                            return;
+                        }
+                    }
+                    if (typeof Chart === 'undefined') {
+                        console.error('Chart.js still unavailable after loading attempt.');
                         return;
                     }
                     // Memory
@@ -1706,7 +1728,7 @@
                   // --- Initialization ---
                   document.addEventListener('DOMContentLoaded', () => {
                     try {
-                        initCharts();
+                        initCharts().catch((err) => console.error('Failed to initialize charts:', err));
                     } catch (e) {
                         console.error('Failed to initialize charts:', e);
                     }
