@@ -40,6 +40,7 @@ const builtinCalls = new Set([
     'Error', 'WebSocket', 'getContext', 'json', 'parseFloat', 'toFixed', 'toLocaleTimeString',
     'toString', 'slice', 'set', 'update', 'remove', 'click', 'close', 'now', 'isArray',
     'add', 'catch', 'rgba', 'var', 'if',
+    'uPlot', 'setData', 'setSize', 'format', 'DateTimeFormat',
     'beginPath', 'lineTo', 'moveTo', 'clearRect', 'closePath', 'arc', 'stroke', 'fill',
     'fillText', 'getBoundingClientRect', 'setTransform', 'scale',
     // Monitoring dashboard helpers / Promise callbacks we allow without explicit function declarations
