@@ -579,7 +579,7 @@ export const admin = new AdminJS({
     ],
     branding: {
         companyName: 'GoatGoat Admin',
-        logo: false,
+        logo: '/public/assets/logo.png',
         theme: {
             colors: {
                 primary100: '#4f46e5',
