@@ -13,6 +13,15 @@ export const requestOTP = async (req, reply) => {
   try {
     const { phone } = req.body;
 
+    // GOOGLE PLAY REVIEWER BYPASS
+    if (phone === '+919876543210') {
+      return reply.send({
+        success: true,
+        message: 'OTP sent successfully',
+        requestId: 'bypass_request_id'
+      });
+    }
+
     // Validate phone number
     if (!phone) {
       return reply.status(400).send({
@@ -33,7 +42,7 @@ export const requestOTP = async (req, reply) => {
     }
 
     // If a previous backoff exists but window has passed, clear request attempts to allow resend UX
-    try { await OTPService.resetRequestAttempts(phone, clientIP); } catch {}
+    try { await OTPService.resetRequestAttempts(phone, clientIP); } catch { }
 
     // Record OTP attempt (request context)
     await OTPService.recordOTPAttempt(phone, clientIP, 'request');
@@ -82,6 +91,33 @@ export const requestOTP = async (req, reply) => {
 export const verifyOTP = async (req, reply) => {
   try {
     const { phone, otp } = req.body;
+
+    // GOOGLE PLAY REVIEWER BYPASS
+    if (phone === '+919876543210' && otp === '123456') {
+      let customer = await Customer.findOne({ phone: Number(phone) });
+      if (!customer) {
+        customer = new Customer({ phone: Number(phone), role: 'Customer', isActivated: true });
+        await customer.save();
+      }
+
+      const accessToken = jwt.sign(
+        { userId: customer._id, role: 'Customer' },
+        process.env.ACCESS_TOKEN_SECRET,
+        { expiresIn: '1d' }
+      );
+      const refreshToken = jwt.sign(
+        { userId: customer._id, role: 'Customer' },
+        process.env.REFRESH_TOKEN_SECRET,
+        { expiresIn: '7d' }
+      );
+
+      return reply.send({
+        success: true,
+        message: 'OTP verified successfully',
+        token: { accessToken, refreshToken },
+        user: customer,
+      });
+    }
 
     // Validate input
     if (!phone || !otp) {
