@@ -358,6 +358,32 @@ export const admin = new AdminJS({
                 }
             }
         },
+        {
+            resource: Models.HomeConfig,
+            options: {
+                navigation: {
+                    name: 'Store Management',
+                    icon: 'Layout'
+                },
+                listProperties: ['isActive', 'layoutVersion', 'updatedAt'],
+                filterProperties: ['isActive', 'layoutVersion'],
+                editProperties: ['isActive', 'layoutVersion', 'bannerCarousel', 'categoryGrids'],
+                showProperties: ['isActive', 'layoutVersion', 'bannerCarousel', 'categoryGrids', 'createdAt', 'updatedAt'],
+                actions: {
+                    new: {
+                        before: async (request: any) => {
+                            if (!request.payload) return request;
+                            request.payload = {
+                                bannerCarousel: request.payload.bannerCarousel ?? [],
+                                categoryGrids: request.payload.categoryGrids ?? [],
+                                ...request.payload,
+                            };
+                            return request;
+                        }
+                    }
+                }
+            }
+        },
         // Admin Management
         {
             resource: Models.Admin,
