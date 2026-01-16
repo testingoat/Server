@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import Category from '../../models/category.js';
 import HomeConfig from '../../models/homeConfig.js';
+import Product from '../../models/products.js';
 
 const buildEtag = (payload) => {
   return crypto.createHash('sha1').update(payload).digest('hex');
@@ -29,8 +30,53 @@ export const getHome = async (request, reply) => {
 
     const sections = [];
 
-    // Banner carousel: keep existing ad carousel behavior by returning empty list if not configured here.
-    // You can wire this to your existing banner source later without changing the client contract.
+    // Offer sections (manual product IDs)
+    const offerSections = Array.isArray(activeConfig?.offerSections) ? activeConfig.offerSections : [];
+    const activeOfferSections = offerSections
+      .filter((s) => s && s.isActive !== false)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    for (const offer of activeOfferSections) {
+      const productIds = (Array.isArray(offer.productIds) ? offer.productIds : [])
+        .map((id) => String(id))
+        .filter(Boolean);
+
+      const products = productIds.length > 0
+        ? await Product.find({
+          _id: { $in: productIds },
+          status: 'approved',
+          isActive: true,
+        })
+          .select('name image price discountPrice quantity')
+          .lean()
+        : [];
+
+      const productMap = new Map(products.map((p) => [String(p._id), p]));
+      const orderedProducts = productIds
+        .map((id) => productMap.get(String(id)))
+        .filter(Boolean)
+        .map((p) => ({
+          _id: String(p._id),
+          name: p.name,
+          image: p.image,
+          imageUrl: p.image,
+          price: p.price,
+          discountPrice: p.discountPrice,
+          quantity: p.quantity,
+        }));
+
+      sections.push({
+        type: 'offer_products',
+        data: {
+          title: offer.title,
+          showAddButton: offer.showAddButton !== false,
+          showDiscountBadge: offer.showDiscountBadge !== false,
+          products: orderedProducts,
+        },
+      });
+    }
+
+    // Banner carousel
     sections.push({
       type: 'banner_carousel',
       data: {
@@ -88,13 +134,18 @@ export const getHome = async (request, reply) => {
       sections,
     };
 
-    // Caching + ETag
+    const requestCacheControl = String(request.headers['cache-control'] || '');
+    const bypassCache = requestCacheControl.includes('no-cache') || requestCacheControl.includes('no-store') || request.query?.t;
+
+    // Caching + ETag (default small TTL; can override via env)
     const etagSeed = `${layoutVersion}:${activeConfig?.updatedAt?.toISOString?.() ?? 'none'}`;
     const etag = buildEtag(etagSeed);
     reply.header('ETag', etag);
-    reply.header('Cache-Control', 'public, max-age=300');
 
-    if (request.headers['if-none-match'] === etag) {
+    const ttlSeconds = Number(process.env.HOME_CACHE_TTL_SECONDS ?? 60);
+    reply.header('Cache-Control', bypassCache ? 'no-store' : `public, max-age=${ttlSeconds}`);
+
+    if (!bypassCache && request.headers['if-none-match'] === etag) {
       return reply.status(304).send();
     }
 

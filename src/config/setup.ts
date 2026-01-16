@@ -367,9 +367,18 @@ export const admin = new AdminJS({
                 },
                 listProperties: ['isActive', 'layoutVersion', 'updatedAt'],
                 filterProperties: ['isActive', 'layoutVersion'],
-                editProperties: ['isActive', 'layoutVersion', 'bannerCarousel', 'categoryGrids'],
-                showProperties: ['isActive', 'layoutVersion', 'bannerCarousel', 'categoryGrids', 'createdAt', 'updatedAt'],
+                editProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'categoryGrids'],
+                showProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'categoryGrids', 'createdAt', 'updatedAt'],
                 properties: {
+                    offerSections: {
+                        components: {
+                            edit: {
+                                props: {
+                                    helpText: 'Offer sections show curated products on Home (manual product IDs). Price/quantity come from Product records; edit those in Product Management.'
+                                }
+                            }
+                        }
+                    },
                     bannerCarousel: {
                         components: {
                             edit: {
@@ -395,6 +404,7 @@ export const admin = new AdminJS({
                             if (!request.payload) return request;
                             request.payload = {
                                 bannerCarousel: request.payload.bannerCarousel ?? [],
+                                offerSections: request.payload.offerSections ?? [],
                                 categoryGrids: request.payload.categoryGrids ?? [],
                                 ...request.payload,
                             };

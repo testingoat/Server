@@ -22,10 +22,20 @@ const homeCategoryGridSchema = new mongoose.Schema({
   tiles: { type: [homeCategoryTileSchema], default: [] },
 }, { _id: false });
 
+const homeOfferSectionSchema = new mongoose.Schema({
+  title: { type: String, required: true },
+  order: { type: Number, default: 0 },
+  isActive: { type: Boolean, default: true },
+  productIds: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+  showAddButton: { type: Boolean, default: true },
+  showDiscountBadge: { type: Boolean, default: true },
+}, { _id: false });
+
 const homeConfigSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   layoutVersion: { type: Number, default: 1 },
   bannerCarousel: { type: [homeBannerSchema], default: [] },
+  offerSections: { type: [homeOfferSectionSchema], default: [] },
   categoryGrids: { type: [homeCategoryGridSchema], default: [] },
 }, { timestamps: true });
 
@@ -33,4 +43,3 @@ homeConfigSchema.index({ isActive: 1, updatedAt: -1 });
 
 const HomeConfig = mongoose.model('HomeConfig', homeConfigSchema);
 export default HomeConfig;
-
