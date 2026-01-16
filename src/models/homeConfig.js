@@ -26,7 +26,7 @@ const homeOfferSectionSchema = new mongoose.Schema({
   title: { type: String, required: true },
   order: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true },
-  productIds: { type: [mongoose.Schema.Types.ObjectId], default: [] },
+  productIds: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }], default: [] },
   showAddButton: { type: Boolean, default: true },
   showDiscountBadge: { type: Boolean, default: true },
 }, { _id: false });

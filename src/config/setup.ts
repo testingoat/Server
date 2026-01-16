@@ -373,6 +373,11 @@ export const admin = new AdminJS({
                     offerSections: {
                         description: 'Offer sections show curated products on Home (manual product IDs). Price/quantity come from Product records; edit those in Product Management.'
                     },
+                    'offerSections.productIds': {
+                        reference: 'Product',
+                        isArray: true,
+                        description: 'Select Products to show in this Offer section (ordered). Only approved + active products will render in the app.'
+                    },
                     bannerCarousel: {
                         description: 'Use public image URLs (R2 recommended). Set order and isActive to control rotation.'
                     },
