@@ -371,31 +371,13 @@ export const admin = new AdminJS({
                 showProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'categoryGrids', 'createdAt', 'updatedAt'],
                 properties: {
                     offerSections: {
-                        components: {
-                            edit: {
-                                props: {
-                                    helpText: 'Offer sections show curated products on Home (manual product IDs). Price/quantity come from Product records; edit those in Product Management.'
-                                }
-                            }
-                        }
+                        description: 'Offer sections show curated products on Home (manual product IDs). Price/quantity come from Product records; edit those in Product Management.'
                     },
                     bannerCarousel: {
-                        components: {
-                            edit: {
-                                props: {
-                                    helpText: 'Use public image URLs (R2 recommended). Set order and isActive to control rotation.'
-                                }
-                            }
-                        }
+                        description: 'Use public image URLs (R2 recommended). Set order and isActive to control rotation.'
                     },
                     categoryGrids: {
-                        components: {
-                            edit: {
-                                props: {
-                                    helpText: 'Create one or more grids. Each grid has a title, order, and tiles referencing Categories. Use label/image override for seasonal tiles.'
-                                }
-                            }
-                        }
+                        description: 'Create one or more grids. Each grid has a title, order, and tiles referencing Categories. Use label/image override for seasonal tiles.'
                     }
                 },
                 actions: {
