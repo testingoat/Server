@@ -67,7 +67,9 @@ export const getHome = async (request, reply) => {
           return {
             categoryId: String(category._id),
             label: tile.labelOverride ?? category.name,
+            name: tile.labelOverride ?? category.name,
             imageUrl: tile.imageOverrideUrl ?? category.image,
+            image: tile.imageOverrideUrl ?? category.image,
           };
         })
         .filter(Boolean);

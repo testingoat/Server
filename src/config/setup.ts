@@ -369,6 +369,26 @@ export const admin = new AdminJS({
                 filterProperties: ['isActive', 'layoutVersion'],
                 editProperties: ['isActive', 'layoutVersion', 'bannerCarousel', 'categoryGrids'],
                 showProperties: ['isActive', 'layoutVersion', 'bannerCarousel', 'categoryGrids', 'createdAt', 'updatedAt'],
+                properties: {
+                    bannerCarousel: {
+                        components: {
+                            edit: {
+                                props: {
+                                    helpText: 'Use public image URLs (R2 recommended). Set order and isActive to control rotation.'
+                                }
+                            }
+                        }
+                    },
+                    categoryGrids: {
+                        components: {
+                            edit: {
+                                props: {
+                                    helpText: 'Create one or more grids. Each grid has a title, order, and tiles referencing Categories. Use label/image override for seasonal tiles.'
+                                }
+                            }
+                        }
+                    }
+                },
                 actions: {
                     new: {
                         before: async (request: any) => {
