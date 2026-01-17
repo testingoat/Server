@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import Category from '../../models/category.js';
 import HomeConfig from '../../models/homeConfig.js';
 import Product from '../../models/products.js';
+import ThemeConfig from '../../models/themeConfig.js';
 
 const buildEtag = (payload) => {
   return crypto.createHash('sha1').update(payload).digest('hex');
@@ -10,6 +11,7 @@ const buildEtag = (payload) => {
 export const getHome = async (request, reply) => {
   try {
     const activeConfig = await HomeConfig.findOne({ isActive: true }).sort({ updatedAt: -1 }).lean();
+    const activeTheme = await ThemeConfig.findOne({ isActive: true }).sort({ updatedAt: -1 }).lean();
 
     const layoutVersion = activeConfig?.layoutVersion ?? 1;
 
@@ -28,7 +30,12 @@ export const getHome = async (request, reply) => {
 
     const categoryMap = new Map(categories.map((c) => [String(c._id), c]));
 
-    const sections = [];
+    const orderedSections = [];
+
+    const theme = {
+      headerGradientTop: activeTheme?.headerGradientTop ?? '#2D3875',
+      headerGradientBottom: activeTheme?.headerGradientBottom ?? '#5B6EA7',
+    };
 
     // Offer sections (manual product IDs)
     const offerSections = Array.isArray(activeConfig?.offerSections) ? activeConfig.offerSections : [];
@@ -36,6 +43,78 @@ export const getHome = async (request, reply) => {
       .filter((s) => s && s.isActive !== false)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
+    // Banner carousel (acts as a section too)
+    orderedSections.push({
+      order: 50,
+      type: 'banner_carousel',
+      data: {
+        items: Array.isArray(activeConfig?.bannerCarousel)
+          ? activeConfig.bannerCarousel.filter((b) => b && b.isActive !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          : [],
+      },
+    });
+
+    // Banner strips
+    const bannerStrips = Array.isArray(activeConfig?.bannerStrips) ? activeConfig.bannerStrips : [];
+    for (const strip of bannerStrips.filter((s) => s && s.isActive !== false)) {
+      orderedSections.push({
+        order: strip.order ?? 0,
+        type: 'banner_strip',
+        data: {
+          imageUrl: strip.imageUrl,
+          deepLink: strip.deepLink,
+        },
+      });
+    }
+
+    // Safe fallback: if no grids configured yet, show first categories so Home never becomes blank.
+    if (activeGrids.length === 0) {
+      const fallbackCategories = await Category.find({}).sort({ name: 1 }).limit(8).select('name image').lean();
+      orderedSections.push({
+        order: 100,
+        type: 'category_grid',
+        data: {
+          title: 'Shop',
+          tiles: fallbackCategories.map((c) => ({
+            categoryId: String(c._id),
+            label: c.name,
+            name: c.name,
+            imageUrl: c.image,
+            image: c.image,
+          })),
+        },
+      });
+    }
+
+    for (const grid of activeGrids) {
+      const tiles = (Array.isArray(grid.tiles) ? grid.tiles : [])
+        .filter((tile) => tile && tile.isActive !== false && tile.categoryId)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((tile) => {
+          const category = categoryMap.get(String(tile.categoryId));
+          if (!category) return null; // orphan tile
+
+          return {
+            categoryId: String(category._id),
+            label: tile.labelOverride ?? category.name,
+            name: tile.labelOverride ?? category.name,
+            imageUrl: tile.imageOverrideUrl ?? category.image,
+            image: tile.imageOverrideUrl ?? category.image,
+          };
+        })
+        .filter(Boolean);
+
+      orderedSections.push({
+        order: grid.order ?? 0,
+        type: 'category_grid',
+        data: {
+          title: grid.title,
+          tiles,
+        },
+      });
+    }
+
+    // Offer sections order: by offer.order
     for (const offer of activeOfferSections) {
       const productIds = (Array.isArray(offer.productIds) ? offer.productIds : [])
         .map((id) => String(id))
@@ -65,10 +144,13 @@ export const getHome = async (request, reply) => {
           quantity: p.quantity,
         }));
 
-      sections.push({
+      orderedSections.push({
+        order: offer.order ?? 0,
         type: 'offer_products',
         data: {
           title: offer.title,
+          titleVariant: offer.titleVariant,
+          titleColor: offer.titleColor,
           showAddButton: offer.showAddButton !== false,
           showDiscountBadge: offer.showDiscountBadge !== false,
           products: orderedProducts,
@@ -76,61 +158,13 @@ export const getHome = async (request, reply) => {
       });
     }
 
-    // Banner carousel
-    sections.push({
-      type: 'banner_carousel',
-      data: {
-        items: Array.isArray(activeConfig?.bannerCarousel)
-          ? activeConfig.bannerCarousel.filter((b) => b && b.isActive !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-          : [],
-      },
-    });
-
-    // Safe fallback: if no grids configured yet, show first categories so Home never becomes blank.
-    if (activeGrids.length === 0) {
-      const fallbackCategories = await Category.find({}).sort({ name: 1 }).limit(8).select('name image').lean();
-      sections.push({
-        type: 'category_grid',
-        data: {
-          title: 'Shop',
-          tiles: fallbackCategories.map((c) => ({
-            categoryId: String(c._id),
-            label: c.name,
-            imageUrl: c.image,
-          })),
-        },
-      });
-    }
-
-    for (const grid of activeGrids) {
-      const tiles = (Array.isArray(grid.tiles) ? grid.tiles : [])
-        .filter((tile) => tile && tile.isActive !== false && tile.categoryId)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-        .map((tile) => {
-          const category = categoryMap.get(String(tile.categoryId));
-          if (!category) return null; // orphan tile
-
-          return {
-            categoryId: String(category._id),
-            label: tile.labelOverride ?? category.name,
-            name: tile.labelOverride ?? category.name,
-            imageUrl: tile.imageOverrideUrl ?? category.image,
-            image: tile.imageOverrideUrl ?? category.image,
-          };
-        })
-        .filter(Boolean);
-
-      sections.push({
-        type: 'category_grid',
-        data: {
-          title: grid.title,
-          tiles,
-        },
-      });
-    }
+    const sections = orderedSections
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+      .map(({ type, data }) => ({ type, data }));
 
     const responseBody = {
       layoutVersion,
+      theme,
       sections,
     };
 

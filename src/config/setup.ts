@@ -368,7 +368,7 @@ export const admin = new AdminJS({
                 listProperties: ['isActive', 'layoutVersion', 'updatedAt'],
                 filterProperties: ['isActive', 'layoutVersion'],
                 editProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'categoryGrids'],
-                showProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'categoryGrids', 'createdAt', 'updatedAt'],
+                showProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'bannerStrips', 'categoryGrids', 'createdAt', 'updatedAt'],
                 properties: {
                     offerSections: {
                         description: 'Offer sections show curated products on Home (manual product IDs). Price/quantity come from Product records; edit those in Product Management.'
@@ -378,8 +378,22 @@ export const admin = new AdminJS({
                         isArray: true,
                         description: 'Select Products to show in this Offer section (ordered). Only approved + active products will render in the app.'
                     },
+                    'offerSections.titleVariant': {
+                        availableValues: [
+                            { value: 'h3', label: 'Large (h3)' },
+                            { value: 'h4', label: 'Medium (h4)' },
+                            { value: 'h5', label: 'Small (h5)' },
+                        ],
+                        description: 'Controls the Offer title size (safe presets).'
+                    },
+                    'offerSections.titleColor': {
+                        description: 'Offer title color (hex), e.g. #111111'
+                    },
                     bannerCarousel: {
                         description: 'Use public image URLs (R2 recommended). Set order and isActive to control rotation.'
+                    },
+                    bannerStrips: {
+                        description: 'Banner strips are single wide images you can place between sections using order.'
                     },
                     categoryGrids: {
                         description: 'Create one or more grids. Each grid has a title, order, and tiles referencing Categories. Use label/image override for seasonal tiles.'
@@ -391,6 +405,7 @@ export const admin = new AdminJS({
                             if (!request.payload) return request;
                             request.payload = {
                                 bannerCarousel: request.payload.bannerCarousel ?? [],
+                                bannerStrips: request.payload.bannerStrips ?? [],
                                 offerSections: request.payload.offerSections ?? [],
                                 categoryGrids: request.payload.categoryGrids ?? [],
                                 ...request.payload,
@@ -398,6 +413,19 @@ export const admin = new AdminJS({
                             return request;
                         }
                     }
+                }
+            }
+        },
+        {
+            resource: Models.ThemeConfig,
+            options: {
+                navigation: { name: 'Store Management', icon: 'Palette' },
+                listProperties: ['isActive', 'headerGradientTop', 'headerGradientBottom', 'updatedAt'],
+                editProperties: ['isActive', 'headerGradientTop', 'headerGradientBottom'],
+                showProperties: ['isActive', 'headerGradientTop', 'headerGradientBottom', 'createdAt', 'updatedAt'],
+                properties: {
+                    headerGradientTop: { description: 'Top gradient color for Home header (hex), e.g. #2D3875' },
+                    headerGradientBottom: { description: 'Bottom gradient color for Home header (hex), e.g. #5B6EA7' },
                 }
             }
         },

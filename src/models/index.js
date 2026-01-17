@@ -10,6 +10,7 @@ import DeliveryEtaConfig from "./deliveryEtaConfig.js";
 import { CustomerNotification } from "./customerNotification.js";
 import { NotificationLog } from "./notificationLog.js";
 import HomeConfig from "./homeConfig.js";
+import ThemeConfig from "./themeConfig.js";
 
 export {
   Order,
@@ -26,5 +27,6 @@ export {
   Notification,
   CustomerNotification,
   NotificationLog,
-  HomeConfig
+  HomeConfig,
+  ThemeConfig
 };
