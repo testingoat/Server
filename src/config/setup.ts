@@ -426,12 +426,13 @@ export const admin = new AdminJS({
             resource: Models.ThemeConfig,
             options: {
                 navigation: { name: 'Store Management', icon: 'Palette' },
-                listProperties: ['isActive', 'headerGradientTop', 'headerGradientBottom', 'updatedAt'],
-                editProperties: ['isActive', 'headerGradientTop', 'headerGradientBottom'],
-                showProperties: ['isActive', 'headerGradientTop', 'headerGradientBottom', 'createdAt', 'updatedAt'],
+                listProperties: ['isActive', 'headerGradientTop', 'headerGradientBottom', 'contentBackgroundColor', 'updatedAt'],
+                editProperties: ['isActive', 'headerGradientTop', 'headerGradientBottom', 'contentBackgroundColor'],
+                showProperties: ['isActive', 'headerGradientTop', 'headerGradientBottom', 'contentBackgroundColor', 'createdAt', 'updatedAt'],
                 properties: {
                     headerGradientTop: { description: 'Top gradient color for Home header (hex), e.g. #2D3875' },
                     headerGradientBottom: { description: 'Bottom gradient color for Home header (hex), e.g. #5B6EA7' },
+                    contentBackgroundColor: { description: 'Background color for Home content area below the header (hex), e.g. #FFFFFF' },
                 }
             }
         },

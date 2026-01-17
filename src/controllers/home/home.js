@@ -35,6 +35,7 @@ export const getHome = async (request, reply) => {
     const theme = {
       headerGradientTop: activeTheme?.headerGradientTop ?? '#2D3875',
       headerGradientBottom: activeTheme?.headerGradientBottom ?? '#5B6EA7',
+      contentBackgroundColor: activeTheme?.contentBackgroundColor ?? '#FFFFFF',
     };
 
     // Offer sections (manual product IDs)
