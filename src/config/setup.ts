@@ -389,6 +389,12 @@ export const admin = new AdminJS({
                     'offerSections.titleColor': {
                         description: 'Offer title color (hex), e.g. #111111'
                     },
+                    'offerSections.seeAllLabel': {
+                        description: 'Label for the right-side CTA button (e.g., See all)'
+                    },
+                    'offerSections.seeAllDeepLink': {
+                        description: 'Optional deep link (e.g., offer_list or category:<id>). If empty, app opens a default list screen.'
+                    },
                     bannerCarousel: {
                         description: 'Use public image URLs (R2 recommended). Set order and isActive to control rotation.'
                     },

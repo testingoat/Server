@@ -49,6 +49,7 @@ const customerSchema = new mongoose.Schema({
             updatedAt: { type: Date, default: Date.now },
         }
     ],
+    wishlist: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }],
 }, {
     timestamps: true
 })

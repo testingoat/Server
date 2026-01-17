@@ -151,6 +151,8 @@ export const getHome = async (request, reply) => {
           title: offer.title,
           titleVariant: offer.titleVariant,
           titleColor: offer.titleColor,
+          seeAllLabel: offer.seeAllLabel,
+          seeAllDeepLink: offer.seeAllDeepLink,
           showAddButton: offer.showAddButton !== false,
           showDiscountBadge: offer.showDiscountBadge !== false,
           products: orderedProducts,
