@@ -367,7 +367,7 @@ export const admin = new AdminJS({
                 },
                 listProperties: ['isActive', 'layoutVersion', 'updatedAt'],
                 filterProperties: ['isActive', 'layoutVersion'],
-                editProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'categoryGrids', 'flashDealsSections', 'trendingSections'],
+                editProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'bannerStrips', 'categoryGrids', 'flashDealsSections', 'trendingSections'],
                 showProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'bannerStrips', 'categoryGrids', 'flashDealsSections', 'trendingSections', 'createdAt', 'updatedAt'],
                 properties: {
                     offerSections: {
