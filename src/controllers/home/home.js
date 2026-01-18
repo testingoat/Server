@@ -161,6 +161,104 @@ export const getHome = async (request, reply) => {
       });
     }
 
+    // Flash Deals sections
+    const flashDealsSections = Array.isArray(activeConfig?.flashDealsSections) ? activeConfig.flashDealsSections : [];
+    const activeFlashDeals = flashDealsSections
+      .filter((s) => s && s.isActive !== false && s.endTime && new Date(s.endTime) > new Date())
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    for (const flash of activeFlashDeals) {
+      const productIds = (Array.isArray(flash.productIds) ? flash.productIds : [])
+        .map((id) => String(id))
+        .filter(Boolean);
+
+      const products = productIds.length > 0
+        ? await Product.find({
+          _id: { $in: productIds },
+          status: 'approved',
+          isActive: true,
+        })
+          .select('name image price discountPrice quantity')
+          .lean()
+        : [];
+
+      const productMap = new Map(products.map((p) => [String(p._id), p]));
+      const orderedProducts = productIds
+        .map((id) => productMap.get(String(id)))
+        .filter(Boolean)
+        .map((p) => ({
+          _id: String(p._id),
+          name: p.name,
+          image: p.image,
+          imageUrl: p.image,
+          price: p.price,
+          discountPrice: p.discountPrice,
+          quantity: p.quantity,
+          stock: p.quantity, // Use quantity as stock for flash deals
+        }));
+
+      orderedSections.push({
+        order: flash.order ?? 0,
+        type: 'flash_deals',
+        data: {
+          title: flash.title || '⚡ Flash Deals',
+          endTime: new Date(flash.endTime).getTime(), // Unix timestamp for client countdown
+          products: orderedProducts,
+        },
+      });
+    }
+
+    // Trending sections
+    const trendingSections = Array.isArray(activeConfig?.trendingSections) ? activeConfig.trendingSections : [];
+    const activeTrending = trendingSections
+      .filter((s) => s && s.isActive !== false)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    for (const trending of activeTrending) {
+      const productIds = (Array.isArray(trending.productIds) ? trending.productIds : [])
+        .map((id) => String(id))
+        .filter(Boolean);
+
+      const soldCounts = Array.isArray(trending.soldCounts) ? trending.soldCounts : [];
+
+      const products = productIds.length > 0
+        ? await Product.find({
+          _id: { $in: productIds },
+          status: 'approved',
+          isActive: true,
+        })
+          .select('name image price discountPrice quantity')
+          .lean()
+        : [];
+
+      const productMap = new Map(products.map((p) => [String(p._id), p]));
+      const orderedProducts = productIds
+        .map((id, index) => {
+          const p = productMap.get(String(id));
+          if (!p) return null;
+          return {
+            _id: String(p._id),
+            name: p.name,
+            image: p.image,
+            imageUrl: p.image,
+            price: p.price,
+            discountPrice: p.discountPrice,
+            quantity: p.quantity,
+            soldCount: soldCounts[index] ?? 0, // Use manual sold count from admin
+          };
+        })
+        .filter(Boolean);
+
+      orderedSections.push({
+        order: trending.order ?? 0,
+        type: 'trending',
+        data: {
+          title: trending.title || '🔥 Trending Now',
+          products: orderedProducts,
+        },
+      });
+    }
+
     const sections = orderedSections
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       .map(({ type, data }) => ({ type, data }));

@@ -367,8 +367,8 @@ export const admin = new AdminJS({
                 },
                 listProperties: ['isActive', 'layoutVersion', 'updatedAt'],
                 filterProperties: ['isActive', 'layoutVersion'],
-                editProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'categoryGrids'],
-                showProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'bannerStrips', 'categoryGrids', 'createdAt', 'updatedAt'],
+                editProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'categoryGrids', 'flashDealsSections', 'trendingSections'],
+                showProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'bannerStrips', 'categoryGrids', 'flashDealsSections', 'trendingSections', 'createdAt', 'updatedAt'],
                 properties: {
                     offerSections: {
                         description: 'Offer sections show curated products on Home (manual product IDs). Price/quantity come from Product records; edit those in Product Management.'
@@ -403,6 +403,50 @@ export const admin = new AdminJS({
                     },
                     categoryGrids: {
                         description: 'Create one or more grids. Each grid has a title, order, and tiles referencing Categories. Use label/image override for seasonal tiles.'
+                    },
+                    // Flash Deals Sections
+                    flashDealsSections: {
+                        description: '⚡ Flash Deals sections with countdown timer. Deals auto-hide when endTime passes. Use order to position relative to other sections.'
+                    },
+                    'flashDealsSections.title': {
+                        description: 'Section title (e.g., "⚡ Flash Deals" or "Lightning Sale")'
+                    },
+                    'flashDealsSections.endTime': {
+                        type: 'datetime',
+                        description: '⏰ When does this flash deal expire? The countdown timer shows time remaining until this moment.'
+                    },
+                    'flashDealsSections.productIds': {
+                        reference: 'Product',
+                        isArray: true,
+                        description: 'Select Products for this Flash Deal (ordered). Stock quantity from Product will be shown.'
+                    },
+                    'flashDealsSections.order': {
+                        description: 'Display order on Home screen (lower = higher up). Use same values as other sections to interleave.'
+                    },
+                    'flashDealsSections.isActive': {
+                        description: 'Toggle to show/hide this flash deal section.'
+                    },
+                    // Trending Sections
+                    trendingSections: {
+                        description: '🔥 Trending/Best Sellers sections. First 3 products get gold/silver/bronze rank badges.'
+                    },
+                    'trendingSections.title': {
+                        description: 'Section title (e.g., "🔥 Trending Now" or "Best Sellers")'
+                    },
+                    'trendingSections.productIds': {
+                        reference: 'Product',
+                        isArray: true,
+                        description: 'Select Products for Trending section. Order matters - first 3 get rank badges (🥇🥈🥉).'
+                    },
+                    'trendingSections.soldCounts': {
+                        isArray: true,
+                        description: 'Optional: Enter sold counts for each product (same order as products). E.g., [1200, 890, 650] for "1.2K sold" display.'
+                    },
+                    'trendingSections.order': {
+                        description: 'Display order on Home screen (lower = higher up).'
+                    },
+                    'trendingSections.isActive': {
+                        description: 'Toggle to show/hide this trending section.'
                     }
                 },
                 actions: {
@@ -414,6 +458,8 @@ export const admin = new AdminJS({
                                 bannerStrips: request.payload.bannerStrips ?? [],
                                 offerSections: request.payload.offerSections ?? [],
                                 categoryGrids: request.payload.categoryGrids ?? [],
+                                flashDealsSections: request.payload.flashDealsSections ?? [],
+                                trendingSections: request.payload.trendingSections ?? [],
                                 ...request.payload,
                             };
                             return request;
