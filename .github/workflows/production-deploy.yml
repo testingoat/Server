@@ -1,0 +1,63 @@
+name: Production Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deploy:
+        description: 'Type "DEPLOY" to confirm production deployment'
+        required: true
+        type: string
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation
+        if: github.event.inputs.confirm_deploy != 'DEPLOY'
+        run: |
+          echo "❌ You must type 'DEPLOY' to confirm production deployment"
+          exit 1
+      
+      - name: Confirmation received
+        run: echo "✅ Deployment confirmed. Proceeding..."
+
+  deploy-production:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+      
+      - name: Add Host Key
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.PRODUCTION_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Backup production configs
+        run: |
+          ssh root@${{ secrets.PRODUCTION_HOST }} \
+            '/var/www/goatgoat-production/server/scripts/backup_configs.sh'
+
+      - name: Deploy to production
+        run: |
+          ssh root@${{ secrets.PRODUCTION_HOST }} \
+            '/var/www/goatgoat-production/server/scripts/deploy.sh'
+
+      - name: Production health check
+        run: |
+          echo "⏳ Waiting for server to start..."
+          sleep 10
+          for i in {1..5}; do
+            echo "Health check attempt $i..."
+            if curl -sf https://goatgoat.tech/health; then
+              echo ""
+              echo "✅ Production is healthy!"
+              exit 0
+            fi
+            echo "⚠️ Health check failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "❌ Health check failed after 5 attempts"
+          exit 1
