@@ -37,12 +37,12 @@ jobs:
 
       - name: Backup production configs
         run: |
-          ssh root@${{ secrets.PRODUCTION_HOST }} \
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.PRODUCTION_HOST }} \
             '/var/www/goatgoat-production/server/scripts/backup_configs.sh'
 
       - name: Deploy to production
         run: |
-          ssh root@${{ secrets.PRODUCTION_HOST }} \
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.PRODUCTION_HOST }} \
             '/var/www/goatgoat-production/server/scripts/deploy.sh'
 
       - name: Production health check
