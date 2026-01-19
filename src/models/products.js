@@ -7,6 +7,34 @@ const productSchema = new mongoose.Schema({
     quantity: { type: String, required: true },
     description: { type: String },
     stock: { type: Number, default: 0 },
+
+    // NEW: Additional images (up to 4 more)
+    additionalImages: [{ type: String }],
+
+    // NEW: Brand/Manufacturer info
+    brand: { type: String },
+
+    // NEW: Product specifications (key-value pairs)
+    specifications: [{
+        key: { type: String },
+        value: { type: String }
+    }],
+
+    // NEW: Nutritional info (for food items)
+    nutritionalInfo: {
+        servingSize: { type: String },
+        calories: { type: String },
+        protein: { type: String },
+        carbs: { type: String },
+        fat: { type: String },
+        fiber: { type: String },
+    },
+
+    // NEW: Additional product details
+    highlights: [{ type: String }],
+    warnings: { type: String },
+    storageInstructions: { type: String },
+
     category: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Category',
@@ -39,3 +67,4 @@ productSchema.index({ category: 1, status: 1 });
 productSchema.index({ name: 1 }); // Index for text-like search
 const Product = mongoose.model('Product', productSchema);
 export default Product;
+

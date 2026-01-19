@@ -518,10 +518,20 @@ export const admin = new AdminJS({
                     name: 'Seller Management',
                     icon: 'Store'
                 },
-                listProperties: ['name', 'seller', 'price', 'category', 'status', 'createdAt'],
-                filterProperties: ['name', 'seller', 'category', 'status'],
-                showProperties: ['name', 'description', 'seller', 'price', 'quantity', 'category', 'images', 'status', 'approvedBy', 'approvedAt', 'rejectionReason', 'createdAt', 'updatedAt'],
-                editProperties: ['name', 'description', 'price', 'quantity', 'category', 'images', 'status', 'rejectionReason'],
+                listProperties: ['name', 'seller', 'price', 'category', 'brand', 'status', 'createdAt'],
+                filterProperties: ['name', 'seller', 'category', 'status', 'brand'],
+                showProperties: [
+                    'name', 'description', 'seller', 'price', 'discountPrice', 'quantity', 'category',
+                    'image', 'additionalImages', 'brand',
+                    'specifications', 'nutritionalInfo', 'highlights', 'warnings', 'storageInstructions',
+                    'status', 'approvedBy', 'approvedAt', 'rejectionReason', 'createdAt', 'updatedAt'
+                ],
+                editProperties: [
+                    'name', 'description', 'price', 'discountPrice', 'quantity', 'category',
+                    'image', 'additionalImages', 'brand',
+                    'specifications', 'nutritionalInfo', 'highlights', 'warnings', 'storageInstructions',
+                    'status', 'rejectionReason'
+                ],
                 actions: {
                     // Custom actions for approval workflow
                     approve: approveAction,
@@ -560,9 +570,34 @@ export const admin = new AdminJS({
                         ],
                         isVisible: { list: true, show: true, edit: true, filter: true }
                     },
-                    images: {
+                    image: {
+                        description: 'Primary product image URL'
+                    },
+                    additionalImages: {
                         isArray: true,
-                        isVisible: { list: false, show: true, edit: true, filter: false }
+                        description: 'Additional product images (up to 4). Enter image URLs.'
+                    },
+                    brand: {
+                        description: 'Brand or manufacturer name'
+                    },
+                    specifications: {
+                        isArray: true,
+                        description: 'Product specifications as key-value pairs (e.g., Weight: 500g, Origin: India)'
+                    },
+                    nutritionalInfo: {
+                        description: 'Nutritional information for food products (servingSize, calories, protein, carbs, fat, fiber)'
+                    },
+                    highlights: {
+                        isArray: true,
+                        description: 'Key product features as bullet points'
+                    },
+                    warnings: {
+                        type: 'textarea',
+                        description: 'Allergen warnings, safety info, etc.'
+                    },
+                    storageInstructions: {
+                        type: 'textarea',
+                        description: 'How to store the product'
                     },
                     approvedBy: {
                         isVisible: { list: false, show: true, edit: false, filter: false }
@@ -631,11 +666,44 @@ export const admin = new AdminJS({
                     name: 'Product Management',
                     icon: 'Package'
                 },
-                listProperties: ['name', 'price', 'category', 'isActive', 'createdAt'],
-                filterProperties: ['name', 'category', 'isActive'],
+                listProperties: ['name', 'price', 'brand', 'category', 'isActive', 'createdAt'],
+                filterProperties: ['name', 'category', 'brand', 'isActive'],
+                showProperties: [
+                    'name', 'description', 'price', 'discountPrice', 'quantity', 'stock',
+                    'image', 'additionalImages', 'brand', 'category', 'seller',
+                    'specifications', 'nutritionalInfo', 'highlights', 'warnings', 'storageInstructions',
+                    'isActive', 'status', 'createdAt', 'updatedAt'
+                ],
+                editProperties: [
+                    'name', 'description', 'price', 'discountPrice', 'quantity', 'stock',
+                    'image', 'additionalImages', 'brand', 'category',
+                    'specifications', 'nutritionalInfo', 'highlights', 'warnings', 'storageInstructions',
+                    'isActive'
+                ],
                 properties: {
                     category: {
                         reference: 'Category'
+                    },
+                    seller: {
+                        reference: 'Seller'
+                    },
+                    additionalImages: {
+                        isArray: true,
+                        description: 'Additional product images (up to 4)'
+                    },
+                    specifications: {
+                        isArray: true,
+                        description: 'Product specifications (key-value pairs)'
+                    },
+                    highlights: {
+                        isArray: true,
+                        description: 'Key product features'
+                    },
+                    warnings: {
+                        type: 'textarea'
+                    },
+                    storageInstructions: {
+                        type: 'textarea'
                     }
                 }
             }

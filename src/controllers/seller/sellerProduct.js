@@ -27,7 +27,11 @@ export const getSellerProducts = async (request, reply) => {
 export const createProduct = async (request, reply) => {
     try {
         const sellerId = request.user.userId;
-        const { name, price, discountPrice, quantity, category, description, stock, image } = request.body;
+        const {
+            name, price, discountPrice, quantity, category, description, stock, image,
+            // New detail fields
+            additionalImages, brand, specifications, nutritionalInfo, highlights, warnings, storageInstructions
+        } = request.body;
         console.log(' Creating new product for seller:', sellerId);
         console.log(' Product data:', { name, price, category });
         // Validate required fields
@@ -54,9 +58,17 @@ export const createProduct = async (request, reply) => {
             category,
             description,
             stock: stock ? Number(stock) : 0,
-            image: image || undefined, // Use provided image URL or leave undefined
+            image: image || undefined,
             seller: sellerId,
-            status: 'pending' // All seller products start as pending
+            status: 'pending', // All seller products start as pending
+            // New detail fields
+            additionalImages: additionalImages || [],
+            brand: brand || undefined,
+            specifications: specifications || [],
+            nutritionalInfo: nutritionalInfo || undefined,
+            highlights: highlights || [],
+            warnings: warnings || undefined,
+            storageInstructions: storageInstructions || undefined,
         };
         const product = new Product(productData);
         await product.save();
@@ -110,7 +122,11 @@ export const updateProduct = async (request, reply) => {
             }
         }
         // Prepare update data
-        const allowedUpdates = ['name', 'price', 'discountPrice', 'quantity', 'description', 'stock', 'image', 'category'];
+        const allowedUpdates = [
+            'name', 'price', 'discountPrice', 'quantity', 'description', 'stock', 'image', 'category',
+            // New detail fields
+            'additionalImages', 'brand', 'specifications', 'nutritionalInfo', 'highlights', 'warnings', 'storageInstructions'
+        ];
         const filteredUpdates = {};
         allowedUpdates.forEach(field => {
             if (updateData[field] !== undefined) {
