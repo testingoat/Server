@@ -64,6 +64,10 @@ const homeTrendingSectionSchema = new mongoose.Schema({
 const homeConfigSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   layoutVersion: { type: Number, default: 1 },
+  // Chip filters (server-driven): product IDs curated by admin for deterministic Home filters.
+  // Used by /api/home?chip=fresh or /api/home?chip=popular.
+  freshTodayProductIds: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }], default: [] },
+  popularProductIds: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Product' }], default: [] },
   bannerCarousel: { type: [homeBannerSchema], default: [] },
   bannerStrips: { type: [homeBannerStripSchema], default: [] },
   offerSections: { type: [homeOfferSectionSchema], default: [] },
@@ -76,4 +80,3 @@ homeConfigSchema.index({ isActive: 1, updatedAt: -1 });
 
 const HomeConfig = mongoose.model('HomeConfig', homeConfigSchema);
 export default HomeConfig;
-

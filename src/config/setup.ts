@@ -367,9 +367,19 @@ export const admin = new AdminJS({
                 },
                 listProperties: ['isActive', 'layoutVersion', 'updatedAt'],
                 filterProperties: ['isActive', 'layoutVersion'],
-                editProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'bannerStrips', 'categoryGrids', 'flashDealsSections', 'trendingSections'],
-                showProperties: ['isActive', 'layoutVersion', 'offerSections', 'bannerCarousel', 'bannerStrips', 'categoryGrids', 'flashDealsSections', 'trendingSections', 'createdAt', 'updatedAt'],
+                editProperties: ['isActive', 'layoutVersion', 'freshTodayProductIds', 'popularProductIds', 'offerSections', 'bannerCarousel', 'bannerStrips', 'categoryGrids', 'flashDealsSections', 'trendingSections'],
+                showProperties: ['isActive', 'layoutVersion', 'freshTodayProductIds', 'popularProductIds', 'offerSections', 'bannerCarousel', 'bannerStrips', 'categoryGrids', 'flashDealsSections', 'trendingSections', 'createdAt', 'updatedAt'],
                 properties: {
+                    freshTodayProductIds: {
+                        reference: 'Product',
+                        isArray: true,
+                        description: 'Chip: "Fresh Today". Curated product list used when the app requests /api/home?chip=fresh. Order matters.'
+                    },
+                    popularProductIds: {
+                        reference: 'Product',
+                        isArray: true,
+                        description: 'Chip: "Popular". Curated product list used when the app requests /api/home?chip=popular. Order matters.'
+                    },
                     offerSections: {
                         description: 'Offer sections show curated products on Home (manual product IDs). Price/quantity come from Product records; edit those in Product Management.'
                     },
@@ -454,6 +464,8 @@ export const admin = new AdminJS({
                         before: async (request: any) => {
                             if (!request.payload) return request;
                             request.payload = {
+                                freshTodayProductIds: request.payload.freshTodayProductIds ?? [],
+                                popularProductIds: request.payload.popularProductIds ?? [],
                                 bannerCarousel: request.payload.bannerCarousel ?? [],
                                 bannerStrips: request.payload.bannerStrips ?? [],
                                 offerSections: request.payload.offerSections ?? [],

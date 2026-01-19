@@ -13,6 +13,16 @@ export const getHome = async (request, reply) => {
     const activeConfig = await HomeConfig.findOne({ isActive: true }).sort({ updatedAt: -1 }).lean();
     const activeTheme = await ThemeConfig.findOne({ isActive: true }).sort({ updatedAt: -1 }).lean();
 
+    const chip = String(request?.query?.chip || '').trim().toLowerCase();
+    const chipProductIds =
+      chip === 'fresh'
+        ? (Array.isArray(activeConfig?.freshTodayProductIds) ? activeConfig.freshTodayProductIds : [])
+        : chip === 'popular'
+          ? (Array.isArray(activeConfig?.popularProductIds) ? activeConfig.popularProductIds : [])
+          : [];
+    const chipProductIdStrings = chipProductIds.map((id) => String(id)).filter(Boolean);
+    const chipSet = new Set(chipProductIdStrings);
+
     const layoutVersion = activeConfig?.layoutVersion ?? 1;
 
     const categoryGrids = Array.isArray(activeConfig?.categoryGrids) ? activeConfig.categoryGrids : [];
@@ -117,9 +127,14 @@ export const getHome = async (request, reply) => {
 
     // Offer sections order: by offer.order
     for (const offer of activeOfferSections) {
-      const productIds = (Array.isArray(offer.productIds) ? offer.productIds : [])
+      const rawIds = (Array.isArray(offer.productIds) ? offer.productIds : [])
         .map((id) => String(id))
         .filter(Boolean);
+
+      // Chip filters (fresh/popular): only show products curated in HomeConfig for deterministic results.
+      const productIds = chipSet.size > 0
+        ? chipProductIdStrings.filter((id) => rawIds.includes(id))
+        : rawIds;
 
       const products = productIds.length > 0
         ? await Product.find({
@@ -168,9 +183,13 @@ export const getHome = async (request, reply) => {
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     for (const flash of activeFlashDeals) {
-      const productIds = (Array.isArray(flash.productIds) ? flash.productIds : [])
+      const rawIds = (Array.isArray(flash.productIds) ? flash.productIds : [])
         .map((id) => String(id))
         .filter(Boolean);
+
+      const productIds = chipSet.size > 0
+        ? chipProductIdStrings.filter((id) => rawIds.includes(id))
+        : rawIds;
 
       const products = productIds.length > 0
         ? await Product.find({
@@ -215,9 +234,13 @@ export const getHome = async (request, reply) => {
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     for (const trending of activeTrending) {
-      const productIds = (Array.isArray(trending.productIds) ? trending.productIds : [])
+      const rawIds = (Array.isArray(trending.productIds) ? trending.productIds : [])
         .map((id) => String(id))
         .filter(Boolean);
+
+      const productIds = chipSet.size > 0
+        ? chipProductIdStrings.filter((id) => rawIds.includes(id))
+        : rawIds;
 
       const soldCounts = Array.isArray(trending.soldCounts) ? trending.soldCounts : [];
 
