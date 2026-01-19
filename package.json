@@ -32,6 +32,7 @@
         "@adminjs/fastify": "^4.1.0",
         "@adminjs/mongoose": "^4.1.0",
         "@adminjs/themes": "^1.0.1",
+        "@aws-sdk/client-s3": "^3.971.0",
         "@fastify/cookie": "^8.3.0",
         "@fastify/session": "^10.1.1",
         "@fastify/websocket": "^7.2.0",

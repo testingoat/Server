@@ -1,7 +1,7 @@
 import { getDeliveryArea, setDeliveryArea, clearDeliveryArea } from '../controllers/seller/sellerDeliveryArea.js';
 import { loginSeller, verifySellerOTP, resendSellerOTP, registerSeller, refreshSellerToken, logoutSeller } from '../controllers/auth/sellerAuth.js';
 import { getSellerProducts, createProduct, updateProduct, deleteProduct, toggleProductStatus, getCategories } from '../controllers/seller/sellerProduct.js';
-import { uploadProductImage, getProductImage, deleteProductImage } from '../controllers/seller/imageUpload.js';
+import { uploadProductImage, deleteProductImage } from '../controllers/seller/imageUpload.js';
 import { getSellerOrders, getPendingOrders, acceptOrder, rejectOrder, getDashboardMetrics } from '../controllers/seller/sellerOrder.js';
 import { setStoreLocation, getStoreLocation, updateStoreLocation } from '../controllers/seller/sellerLocation.js';
 import { verifyToken } from '../middleware/auth.js';
@@ -119,8 +119,7 @@ export const sellerRoutes = async (fastify, options) => {
     console.log('Registering seller image upload routes');
     // Upload product image
     fastify.post('/seller/images/upload', { preHandler: [verifyToken] }, uploadProductImage);
-    // Get product image (public route for serving images)
-    fastify.get('/seller/images/:id', getProductImage);
+    // Note: GET /seller/images/:id removed - images served directly from R2 CDN
     // Delete product image
     fastify.delete('/seller/images/:id', { preHandler: [verifyToken] }, deleteProductImage);
     // Product Management Routes

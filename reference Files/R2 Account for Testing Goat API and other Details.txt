@@ -1,0 +1,28 @@
+Account Details :
+
+Account ID : 9ba921e87522a37a0c68ab1fb1714073
+S3 API : https://9ba921e87522a37a0c68ab1fb1714073.r2.cloudflarestorage.com
+
+
+R2 Account Token Goat Server
+
+Token value : uDIrQaFbsGpmqON41iqF2EQMW5Gh1i2TzaaM5gMd
+
+
+Access Key ID : 9447f7f2b069e41dcc5367cdf06b52c5
+
+Secret Access Key : c9deb58c10dafee2418deed497b7a86ea13163213dd724b7a55f2cec2c64e2d3
+
+Use jurisdiction-specific endpoints for S3 clients:  https://9ba921e87522a37a0c68ab1fb1714073.r2.cloudflarestorage.com
+
+
+
+R2 User Token Goat Server 
+
+Token value : _2GmfYQOgesngasuloz1XZmEYbYWqJkhVBKYVFDF
+
+Access Key ID : 5c4f060647390558abc432408d04c661
+
+Secret Access Key : 71460af62205af59bb2a6a5ddb6dc12943c0c4ff683eb64ad07d0a986787ba12
+
+Use jurisdiction-specific endpoints for S3 clients: https://9ba921e87522a37a0c68ab1fb1714073.r2.cloudflarestorage.com
