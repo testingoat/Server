@@ -789,42 +789,98 @@ export const admin = new AdminJS({
                     name: 'Promotions',
                     icon: 'Tag'
                 },
-                listProperties: ['code', 'name', 'type', 'value', 'maxDiscount', 'validUntil', 'isActive', 'currentUsageCount'],
-                filterProperties: ['code', 'type', 'isActive', 'applicableTo'],
+                listProperties: ['code', 'name', 'type', 'value', 'validUntil', 'isActive', 'currentUsageCount', 'blockedUsers'],
+                filterProperties: ['code', 'type', 'isActive', 'applicableTo', 'validFrom', 'validUntil'],
                 showProperties: [
                     'couponId', 'code', 'name', 'description', 'type', 'value', 'maxDiscount',
                     'minOrderValue', 'maxUsagePerUser', 'totalUsageLimit', 'currentUsageCount',
-                    'applicableTo', 'validFrom', 'validUntil', 'isActive', 'createdAt'
+                    'applicableTo', 'targetCategories', 'targetSellers', 'targetProducts',
+                    'allowedUsers', 'blockedUsers',
+                    'validFrom', 'validUntil', 'timeSlots',
+                    'cooldownHours', 'maxDiscountPerDay', 'minOrdersRequired',
+                    'isVisible', 'isHidden', 'isActive', 'createdAt', 'updatedAt'
                 ],
                 editProperties: [
                     'code', 'name', 'description', 'type', 'value', 'maxDiscount',
                     'minOrderValue', 'maxUsagePerUser', 'totalUsageLimit',
-                    'applicableTo', 'validFrom', 'validUntil', 'isVisible', 'isHidden', 'isActive'
+                    'applicableTo', 'targetCategories', 'targetSellers', 'targetProducts',
+                    'allowedUsers', 'blockedUsers',
+                    'validFrom', 'validUntil', 'timeSlots',
+                    'cooldownHours', 'maxDiscountPerDay', 'minOrdersRequired',
+                    'isVisible', 'isHidden', 'isActive'
                 ],
                 properties: {
                     type: {
                         availableValues: [
                             { value: 'flat', label: '₹ Flat Discount' },
                             { value: 'percentage', label: '% Percentage' },
-                            { value: 'free_delivery', label: 'Free Delivery' },
-                            { value: 'cashback', label: 'Cashback' },
-                            { value: 'bogo', label: 'Buy One Get One' }
+                            { value: 'free_delivery', label: '🚚 Free Delivery' },
+                            { value: 'cashback', label: '💰 Cashback' },
+                            { value: 'bogo', label: '🎁 Buy One Get One' }
                         ]
                     },
                     applicableTo: {
                         availableValues: [
                             { value: 'all', label: 'All Users' },
-                            { value: 'new_users', label: 'New Users Only' },
-                            { value: 'specific_users', label: 'Specific Users' },
-                            { value: 'category', label: 'Category' },
-                            { value: 'seller', label: 'Seller' },
-                            { value: 'product', label: 'Product' }
+                            { value: 'new_users', label: '🆕 New Users Only' },
+                            { value: 'specific_users', label: '👤 Specific Users' },
+                            { value: 'category', label: '📁 Category' },
+                            { value: 'seller', label: '🏪 Seller' },
+                            { value: 'product', label: '📦 Product' }
                         ]
+                    },
+                    // Abuse Prevention Fields
+                    blockedUsers: {
+                        isArray: true,
+                        reference: 'Customer',
+                        description: '⛔ ABUSE PREVENTION: Users blocked from using this coupon'
+                    },
+                    cooldownHours: {
+                        description: '⏱️ ABUSE PREVENTION: Hours before same user can use again (0 = no cooldown)'
+                    },
+                    maxDiscountPerDay: {
+                        description: '📊 ABUSE PREVENTION: Max total discount per user per day (empty = no limit)'
+                    },
+                    minOrdersRequired: {
+                        description: '🔢 ABUSE PREVENTION: Minimum completed orders to unlock (0 = no requirement)'
+                    },
+                    // Targeting Fields
+                    allowedUsers: {
+                        isArray: true,
+                        reference: 'Customer',
+                        description: '👥 Specific users allowed to use this coupon (if applicableTo = specific_users)'
+                    },
+                    targetCategories: {
+                        isArray: true,
+                        reference: 'Category',
+                        description: 'Categories this coupon applies to (if applicableTo = category)'
+                    },
+                    targetSellers: {
+                        isArray: true,
+                        reference: 'Seller',
+                        description: 'Sellers this coupon applies to (if applicableTo = seller)'
+                    },
+                    targetProducts: {
+                        isArray: true,
+                        reference: 'Product',
+                        description: 'Products this coupon applies to (if applicableTo = product)'
+                    },
+                    timeSlots: {
+                        isArray: true,
+                        description: '🕐 Time-based validity (e.g., lunch 12-3pm). Leave empty for all-day.'
+                    },
+                    currentUsageCount: {
+                        isVisible: { list: true, show: true, edit: false, filter: false },
+                        description: 'Number of times this coupon has been used'
                     }
+                },
+                sort: {
+                    sortBy: 'createdAt',
+                    direction: 'desc'
                 }
             }
         },
-        // Coupon Usage (Read-only Analytics)
+        // Coupon Usage (Read-only Analytics with Abuse Tracking)
         {
             resource: Models.CouponUsage,
             options: {
@@ -832,16 +888,49 @@ export const admin = new AdminJS({
                     name: 'Promotions',
                     icon: 'Tag'
                 },
-                listProperties: ['couponCode', 'customer', 'discountApplied', 'status', 'usedAt'],
-                filterProperties: ['couponCode', 'status'],
+                listProperties: ['couponCode', 'customer', 'discountApplied', 'customerIP', 'status', 'usedAt'],
+                filterProperties: ['couponCode', 'status', 'customerIP', 'usedAt'],
+                showProperties: [
+                    'coupon', 'couponCode', 'customer', 'order',
+                    'discountType', 'discountApplied', 'orderTotal', 'orderTotalAfterDiscount',
+                    'cashbackAmount', 'cashbackCredited', 'cashbackCreditedAt',
+                    'customerIP', 'deviceId', 'userAgent',
+                    'status', 'refundedAt', 'refundReason', 'usedAt'
+                ],
+                properties: {
+                    coupon: { reference: 'Coupon' },
+                    customer: { reference: 'Customer' },
+                    order: { reference: 'Order' },
+                    customerIP: {
+                        description: '🌐 ABUSE TRACKING: IP address used when applying coupon'
+                    },
+                    deviceId: {
+                        description: '📱 ABUSE TRACKING: Device ID (if provided by app)'
+                    },
+                    userAgent: {
+                        description: '🖥️ ABUSE TRACKING: Browser/App user agent string'
+                    },
+                    status: {
+                        availableValues: [
+                            { value: 'applied', label: '⏳ Applied' },
+                            { value: 'completed', label: '✅ Completed' },
+                            { value: 'refunded', label: '↩️ Refunded' },
+                            { value: 'cancelled', label: '❌ Cancelled' }
+                        ]
+                    }
+                },
                 actions: {
                     new: { isVisible: false },
                     edit: { isVisible: false },
                     delete: { isVisible: false }
+                },
+                sort: {
+                    sortBy: 'usedAt',
+                    direction: 'desc'
                 }
             }
         },
-        // Wallet Management
+        // Wallet Management (Fraud Prevention)
         {
             resource: Models.Wallet,
             options: {
@@ -849,11 +938,46 @@ export const admin = new AdminJS({
                     name: 'Promotions',
                     icon: 'Tag'
                 },
-                listProperties: ['customer', 'balance', 'totalEarned', 'totalSpent', 'isFrozen'],
+                listProperties: ['customer', 'balance', 'expiringBalance', 'totalEarned', 'totalSpent', 'isFrozen'],
+                filterProperties: ['isFrozen'],
+                showProperties: [
+                    'customer', 'balance', 'expiringBalance', 'totalEarned', 'totalSpent',
+                    'transactions', 'isActive', 'isFrozen', 'frozenReason', 'frozenAt',
+                    'createdAt', 'updatedAt'
+                ],
                 editProperties: ['isFrozen', 'frozenReason'],
+                properties: {
+                    customer: { reference: 'Customer' },
+                    isFrozen: {
+                        description: '🔒 FRAUD PREVENTION: Freeze wallet for suspicious activity'
+                    },
+                    frozenReason: {
+                        type: 'textarea',
+                        description: 'Reason for freezing (for audit trail)'
+                    },
+                    frozenAt: {
+                        description: 'When the wallet was frozen'
+                    },
+                    balance: {
+                        isVisible: { list: true, show: true, edit: false, filter: false },
+                        description: 'Current available balance'
+                    },
+                    expiringBalance: {
+                        isVisible: { list: true, show: true, edit: false, filter: false },
+                        description: 'Balance that will expire (cashback credits)'
+                    },
+                    transactions: {
+                        isVisible: { list: false, show: true, edit: false, filter: false },
+                        description: 'Transaction history'
+                    }
+                },
                 actions: {
                     new: { isVisible: false },
                     delete: { isVisible: false }
+                },
+                sort: {
+                    sortBy: 'updatedAt',
+                    direction: 'desc'
                 }
             }
         },
