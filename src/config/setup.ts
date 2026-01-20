@@ -981,6 +981,119 @@ export const admin = new AdminJS({
                 }
             }
         },
+        // Referral Program Management
+        {
+            resource: Models.Referral,
+            options: {
+                navigation: {
+                    name: 'Promotions',
+                    icon: 'Tag'
+                },
+                listProperties: ['referralCode', 'referrer', 'referee', 'status', 'referrerReward', 'refereeReward', 'createdAt'],
+                filterProperties: ['status', 'referralCode', 'createdAt'],
+                showProperties: [
+                    'referrer', 'referee', 'referralCode', 'status',
+                    'referrerReward', 'refereeReward',
+                    'referrerRewarded', 'refereeRewarded',
+                    'completingOrder', 'expiresAt',
+                    'referrerIP', 'refereeIP', 'refereeDeviceId',
+                    'source', 'createdAt', 'updatedAt'
+                ],
+                properties: {
+                    referrer: { reference: 'Customer' },
+                    referee: { reference: 'Customer' },
+                    completingOrder: { reference: 'Order' },
+                    status: {
+                        availableValues: [
+                            { value: 'pending', label: '⏳ Pending' },
+                            { value: 'first_order_placed', label: '📦 First Order Placed' },
+                            { value: 'completed', label: '✅ Completed' },
+                            { value: 'expired', label: '⏰ Expired' },
+                            { value: 'cancelled', label: '❌ Cancelled' }
+                        ]
+                    },
+                    referrerIP: {
+                        description: '🌐 ABUSE TRACKING: Referrer IP address'
+                    },
+                    refereeIP: {
+                        description: '🌐 ABUSE TRACKING: Referee IP address'
+                    },
+                    refereeDeviceId: {
+                        description: '📱 ABUSE TRACKING: Referee device ID'
+                    }
+                },
+                actions: {
+                    new: { isVisible: false },
+                    delete: { isVisible: false }
+                },
+                sort: {
+                    sortBy: 'createdAt',
+                    direction: 'desc'
+                }
+            }
+        },
+        // Loyalty Tier Management
+        {
+            resource: Models.LoyaltyTier,
+            options: {
+                navigation: {
+                    name: 'Promotions',
+                    icon: 'Tag'
+                },
+                listProperties: ['customer', 'tier', 'ordersThisMonth', 'spentThisMonth', 'points', 'totalOrders'],
+                filterProperties: ['tier'],
+                showProperties: [
+                    'customer', 'tier',
+                    'ordersThisMonth', 'spentThisMonth',
+                    'totalOrders', 'totalSpent',
+                    'points', 'lifetimePoints',
+                    'benefits', 'tierAchievedAt', 'tierExpiresAt',
+                    'previousTier', 'tierHistory',
+                    'createdAt', 'updatedAt'
+                ],
+                editProperties: ['tier'],
+                properties: {
+                    customer: { reference: 'Customer' },
+                    tier: {
+                        availableValues: [
+                            { value: 'bronze', label: '🥉 Bronze' },
+                            { value: 'silver', label: '🥈 Silver' },
+                            { value: 'gold', label: '🥇 Gold' },
+                            { value: 'platinum', label: '💎 Platinum' }
+                        ],
+                        description: 'Customer loyalty tier (can be manually upgraded)'
+                    },
+                    ordersThisMonth: {
+                        isVisible: { list: true, show: true, edit: false, filter: false }
+                    },
+                    spentThisMonth: {
+                        isVisible: { list: true, show: true, edit: false, filter: false }
+                    },
+                    points: {
+                        isVisible: { list: true, show: true, edit: false, filter: false },
+                        description: 'Redeemable loyalty points'
+                    },
+                    lifetimePoints: {
+                        isVisible: { list: false, show: true, edit: false, filter: false }
+                    },
+                    benefits: {
+                        isVisible: { list: false, show: true, edit: false, filter: false },
+                        description: 'Current tier benefits'
+                    },
+                    tierHistory: {
+                        isVisible: { list: false, show: true, edit: false, filter: false }
+                    }
+                },
+                actions: {
+                    new: { isVisible: false },
+                    delete: { isVisible: false }
+                },
+                sort: {
+                    sortBy: 'lifetimePoints',
+                    direction: 'desc'
+                }
+            }
+        },
     ],
     branding: {
         companyName: 'GoatGoat Admin',

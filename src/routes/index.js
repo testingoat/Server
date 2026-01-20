@@ -12,6 +12,9 @@ import { customerRoutes } from './customer.js';
 import { homeRoutes } from './home.js';
 import { couponRoutes } from './coupon.js';
 import { walletRoutes } from './wallet.js';
+import referralRoutes from './referral.js';
+import loyaltyRoutes from './loyalty.js';
+
 const prefix = '/api';
 export const registerRoutes = async (fastify) => {
     console.log('Registering routes with prefix:', prefix);
@@ -66,6 +69,14 @@ export const registerRoutes = async (fastify) => {
         console.log('Registering wallet routes...');
         await fastify.register(walletRoutes, { prefix: `${prefix}/wallet` }); // /api/wallet/*
         console.log('Wallet routes registered');
+
+        console.log('Registering referral routes...');
+        await fastify.register(referralRoutes, { prefix: `${prefix}/referral` }); // /api/referral/*
+        console.log('Referral routes registered');
+
+        console.log('Registering loyalty routes...');
+        await fastify.register(loyaltyRoutes, { prefix: `${prefix}/loyalty` }); // /api/loyalty/*
+        console.log('Loyalty routes registered');
 
         console.log('All routes registered successfully');
     }

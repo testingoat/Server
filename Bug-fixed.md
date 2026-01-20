@@ -656,3 +656,99 @@ New **Promotions** section with:
 
 ### Timestamp
 - 2026-01-20
+
+
+## [2026-01-20] Wallet, Referral & Loyalty Program Implementation (Phases 2-4)
+
+### Task
+Complete the promotional features system with wallet checkout integration, referral program, and loyalty tier system.
+
+### Implementation Details
+
+#### Phase 2: Wallet Service (`services/walletService.js`)
+- **getOrCreateWallet()** - Auto-create wallet for customers
+- **credit()** - Add funds with source tracking (cashback, referral, refund, promo)
+- **debit()** - Remove funds for order payment
+- **validateForCheckout()** - Check if wallet can be used
+- **processRefund()** - Handle order cancellation refunds
+- **creditCashback()** - Award cashback after order completion
+- **creditReferralReward()** - Award referral bonuses
+- **freezeWallet() / unfreezeWallet()** - Fraud prevention
+
+#### Phase 3: Referral System
+
+**Model (`models/referral.js`):**
+- Status tracking: pending → first_order_placed → completed/expired
+- Reward configuration: ₹100 referrer, ₹50 referee
+- Abuse tracking: IP addresses, device IDs
+- 7-day expiry for pending referrals
+
+**Service (`services/referralService.js`):**
+- **generateReferralCode()** - Create unique NAME123 format codes
+- **applyReferralCode()** - Validate and apply with instant ₹50 to referee
+- **completeReferral()** - Award ₹100 to referrer after first order
+- **getReferralHistory()** - Paginated list of referrals
+- **expirePendingReferrals()** - Scheduled job for cleanup
+
+**Routes (`routes/referral.js`):**
+- `GET /api/referral/my-code` - Get/generate code
+- `POST /api/referral/apply` - Apply code
+- `GET /api/referral/history` - View referrals
+- `GET /api/referral/leaderboard` - Top referrers
+
+#### Phase 4: Loyalty Program
+
+**Model (`models/loyaltyTier.js`):**
+- Tiers: Bronze → Silver → Gold → Platinum
+- Progress: ordersThisMonth, spentThisMonth
+- Points: 1 point per ₹1 × tier multiplier
+- Benefits: extraCashback%, freeDelivery, prioritySupport
+
+**Tier Configuration:**
+| Tier | Orders | Spent | Cashback | Free Delivery |
+|------|--------|-------|----------|---------------|
+| Bronze | 0+ | ₹0+ | 0% | ❌ |
+| Silver | 6+ | ₹1,500+ | 5% | ❌ |
+| Gold | 16+ | ₹5,000+ | 10% | ✅ |
+| Platinum | 30+ | ₹10,000+ | 15% | ✅ |
+
+**Service (`services/loyaltyService.js`):**
+- **recordOrder()** - Update tier on every order
+- **getCheckoutBenefits()** - Get applicable benefits
+- **calculateExtraCashback()** - Tier-based bonus
+- **redeemPoints()** - Convert points to ₹
+
+**Routes (`routes/loyalty.js`):**
+- `GET /api/loyalty/` - Tier status
+- `GET /api/loyalty/progress` - Next tier progress
+- `GET /api/loyalty/benefits` - Current benefits
+- `POST /api/loyalty/redeem` - Redeem points
+- `GET /api/loyalty/leaderboard` - Top customers
+
+### AdminJS Integration
+Added to Promotions section:
+- **Referral** - View relationships, IP tracking, status
+- **LoyaltyTier** - View tiers, manual upgrade option
+
+### Verification
+- ✅ `npm run build` - Exit code: 0
+- ✅ All new files compiled without errors
+- ✅ All files copied to dist/
+
+### Files Created
+- `services/walletService.js` - 340 lines
+- `models/referral.js` - 151 lines
+- `services/referralService.js` - 298 lines
+- `models/loyaltyTier.js` - 233 lines
+- `services/loyaltyService.js` - 214 lines
+- `routes/referral.js` - 134 lines
+- `routes/loyalty.js` - 154 lines
+
+### Files Modified
+- `models/index.js` - Added Referral, LoyaltyTier exports
+- `routes/index.js` - Registered referral, loyalty routes
+- `config/setup.ts` - Added Referral, LoyaltyTier AdminJS resources
+
+### Timestamp
+- 2026-01-20
+

@@ -14,6 +14,8 @@ import ThemeConfig from "./themeConfig.js";
 import Coupon from "./coupon.js";
 import CouponUsage from "./couponUsage.js";
 import Wallet from "./wallet.js";
+import Referral from "./referral.js";
+import LoyaltyTier from "./loyaltyTier.js";
 
 export {
   Order,
@@ -34,6 +36,7 @@ export {
   ThemeConfig,
   Coupon,
   CouponUsage,
-  Wallet
+  Wallet,
+  Referral,
+  LoyaltyTier
 };
-
