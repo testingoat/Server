@@ -11,6 +11,9 @@ import { CustomerNotification } from "./customerNotification.js";
 import { NotificationLog } from "./notificationLog.js";
 import HomeConfig from "./homeConfig.js";
 import ThemeConfig from "./themeConfig.js";
+import Coupon from "./coupon.js";
+import CouponUsage from "./couponUsage.js";
+import Wallet from "./wallet.js";
 
 export {
   Order,
@@ -28,5 +31,9 @@ export {
   CustomerNotification,
   NotificationLog,
   HomeConfig,
-  ThemeConfig
+  ThemeConfig,
+  Coupon,
+  CouponUsage,
+  Wallet
 };
+

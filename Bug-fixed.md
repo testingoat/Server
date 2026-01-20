@@ -531,3 +531,128 @@ Implement a READ-ONLY search suggestion endpoint `/search/v1/suggest` with fuzzy
 - 2025-11-30
 
 
+## [2026-01-20] Coupon System & Competitive Features Implementation
+
+### Task
+Implement a comprehensive, abuse-proof coupon code system with wallet, cashback, and AdminJS integration to compete with Zepto, Blinkit, and Swiggy Instamart.
+
+### Implementation Details
+
+#### 1. New Models Created
+
+**`src/models/coupon.js`**
+- Supports 5 coupon types: `flat`, `percentage`, `free_delivery`, `bogo`, `cashback`
+- **Abuse Prevention Features**:
+  - `blockedUsers` array to ban abusive users from coupons
+  - `cooldownHours` - minimum gap between uses by same user
+  - `maxDiscountPerDay` - daily discount cap per user
+  - `minOrdersRequired` - require order history before use
+- **Targeting**:
+  - `applicableTo`: all, new_users, specific_users, category, seller, product
+  - Target arrays: `targetCategories`, `targetSellers`, `targetProducts`, `allowedUsers`
+- **Time-Slot Validation**:
+  - `timeSlots` array with `startHour`, `endHour`, `days` for lunch/dinner deals
+- **Virtuals**: `isExpired`, `isNotYetValid`, `usageRemaining`, `discountDisplay`
+
+**`src/models/couponUsage.js`**
+- Tracks every coupon use with full audit trail
+- **Abuse Tracking**: `customerIP`, `deviceId`, `userAgent`
+- **Analytics Methods**:
+  - `getUserUsageCount()` - count user's uses of a coupon
+  - `getUserDailyDiscount()` - total discount today
+  - `getLastUsageTime()` - for cooldown checks
+  - `checkIPAbuse()` - detect multi-account fraud
+  - `getCouponAnalytics()` - aggregated stats
+
+**`src/models/wallet.js`**
+- Customer wallet with balance tracking
+- **Transaction Types**: cashback, referral, refund, promo, order_payment, expired, admin_credit/debit
+- **Expiring Credits**: `expiresAt` field with `processExpiredCredits()` static method
+- **Freeze Capability**: `isFrozen`, `frozenReason`, `frozenAt` for fraud prevention
+- **Methods**: `credit()`, `debit()`, `getTransactions()`, `getOrCreate()`
+
+#### 2. Coupon Service (`src/services/couponService.js`)
+
+**Validation Pipeline** (13-step abuse-proof validation):
+1. Find coupon by code
+2. Check if user is blocked
+3. Check validity period
+4. Check time slots
+5. Check minimum order value
+6. Check total usage limit
+7. Check user usage limit
+8. Check cooldown period
+9. Check IP abuse
+10. Check eligibility (new user, specific user, min orders)
+11. Check applicability (category/seller/product targeting)
+12. Check daily discount limit
+13. Calculate discount
+
+**Key Methods**:
+- `validateCoupon()` - Full validation with all abuse checks
+- `applyCouponToOrder()` - Record usage on order creation
+- `completeCouponUsage()` - Credit cashback after order completion
+- `refundCouponUsage()` - Handle order cancellations
+- `getAvailableCoupons()` - List visible coupons for user
+- `getUserCouponHistory()` - Paginated usage history
+
+#### 3. API Routes
+
+**`src/routes/coupon.js`** - `/api/coupons/*`
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/available` | List available coupons for user |
+| POST | `/validate` | Validate code and preview discount |
+| GET | `/history` | User's coupon usage history |
+| GET | `/:code` | Get coupon details |
+
+**`src/routes/wallet.js`** - `/api/wallet/*`
+| Method | Route | Description |
+|--------|-------|-------------|
+| GET | `/` | Get wallet balance and summary |
+| GET | `/transactions` | Get transaction history |
+| GET | `/expiring` | Get credits expiring in 7 days |
+
+#### 4. Order Model Updates (`src/models/order.js`)
+
+Added fields:
+- `coupon.code`, `coupon.couponId`, `coupon.discountType`, `coupon.discountAmount`
+- `subtotal` - price before discounts
+- `discount` - total coupon discount
+- `walletAmountUsed` - wallet balance applied
+- `freeDeliveryApplied` - boolean for free delivery coupons
+
+#### 5. AdminJS Integration (`src/config/setup.ts`)
+
+New **Promotions** section with:
+- **Coupon** - Full CRUD with dropdown for type/applicableTo
+- **CouponUsage** - Read-only analytics (no create/edit/delete)
+- **Wallet** - View + freeze/unfreeze (no create/delete)
+
+### Verification
+- ✅ `npm run build` completed successfully
+- ✅ All new files compiled without errors
+- ✅ All files copied to dist/ folder
+
+### Files Created
+- `src/models/coupon.js` - 196 lines
+- `src/models/couponUsage.js` - 166 lines
+- `src/models/wallet.js` - 236 lines
+- `src/services/couponService.js` - 529 lines
+- `src/routes/coupon.js` - 181 lines
+- `src/routes/wallet.js` - 113 lines
+
+### Files Modified
+- `src/models/index.js` - Added Coupon, CouponUsage, Wallet exports
+- `src/models/order.js` - Added coupon, subtotal, discount, wallet fields
+- `src/routes/index.js` - Registered coupon and wallet routes
+- `src/config/setup.ts` - Added Promotions section to AdminJS
+
+### Remaining Tasks
+1. Update order creation controller to apply coupons
+2. Call `couponService.completeCouponUsage()` on order completion
+3. Test coupon validation via API
+4. Verify AdminJS panel shows Promotions section
+
+### Timestamp
+- 2026-01-20

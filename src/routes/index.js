@@ -10,6 +10,8 @@ import { searchRoutes } from './search.js';
 import { customerNotificationRoutes } from './customerNotifications.js';
 import { customerRoutes } from './customer.js';
 import { homeRoutes } from './home.js';
+import { couponRoutes } from './coupon.js';
+import { walletRoutes } from './wallet.js';
 const prefix = '/api';
 export const registerRoutes = async (fastify) => {
     console.log('Registering routes with prefix:', prefix);
@@ -56,6 +58,15 @@ export const registerRoutes = async (fastify) => {
         await fastify.register(adminFcmRoutes, { prefix: '/admin' }); // /admin/fcm-management
         await fastify.register(apiFcmRoutes, { prefix: '/api/fcm' }); // /api/fcm/send-to-*
         console.log('FCM dashboard routes registered');
+
+        console.log('Registering coupon routes...');
+        await fastify.register(couponRoutes, { prefix: `${prefix}/coupons` }); // /api/coupons/*
+        console.log('Coupon routes registered');
+
+        console.log('Registering wallet routes...');
+        await fastify.register(walletRoutes, { prefix: `${prefix}/wallet` }); // /api/wallet/*
+        console.log('Wallet routes registered');
+
         console.log('All routes registered successfully');
     }
     catch (error) {

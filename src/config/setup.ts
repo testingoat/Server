@@ -780,6 +780,83 @@ export const admin = new AdminJS({
                 }
             }
         },
+        // ============ PROMOTIONS MANAGEMENT ============
+        // Coupon Management
+        {
+            resource: Models.Coupon,
+            options: {
+                navigation: {
+                    name: 'Promotions',
+                    icon: 'Tag'
+                },
+                listProperties: ['code', 'name', 'type', 'value', 'maxDiscount', 'validUntil', 'isActive', 'currentUsageCount'],
+                filterProperties: ['code', 'type', 'isActive', 'applicableTo'],
+                showProperties: [
+                    'couponId', 'code', 'name', 'description', 'type', 'value', 'maxDiscount',
+                    'minOrderValue', 'maxUsagePerUser', 'totalUsageLimit', 'currentUsageCount',
+                    'applicableTo', 'validFrom', 'validUntil', 'isActive', 'createdAt'
+                ],
+                editProperties: [
+                    'code', 'name', 'description', 'type', 'value', 'maxDiscount',
+                    'minOrderValue', 'maxUsagePerUser', 'totalUsageLimit',
+                    'applicableTo', 'validFrom', 'validUntil', 'isVisible', 'isHidden', 'isActive'
+                ],
+                properties: {
+                    type: {
+                        availableValues: [
+                            { value: 'flat', label: '₹ Flat Discount' },
+                            { value: 'percentage', label: '% Percentage' },
+                            { value: 'free_delivery', label: 'Free Delivery' },
+                            { value: 'cashback', label: 'Cashback' },
+                            { value: 'bogo', label: 'Buy One Get One' }
+                        ]
+                    },
+                    applicableTo: {
+                        availableValues: [
+                            { value: 'all', label: 'All Users' },
+                            { value: 'new_users', label: 'New Users Only' },
+                            { value: 'specific_users', label: 'Specific Users' },
+                            { value: 'category', label: 'Category' },
+                            { value: 'seller', label: 'Seller' },
+                            { value: 'product', label: 'Product' }
+                        ]
+                    }
+                }
+            }
+        },
+        // Coupon Usage (Read-only Analytics)
+        {
+            resource: Models.CouponUsage,
+            options: {
+                navigation: {
+                    name: 'Promotions',
+                    icon: 'Tag'
+                },
+                listProperties: ['couponCode', 'customer', 'discountApplied', 'status', 'usedAt'],
+                filterProperties: ['couponCode', 'status'],
+                actions: {
+                    new: { isVisible: false },
+                    edit: { isVisible: false },
+                    delete: { isVisible: false }
+                }
+            }
+        },
+        // Wallet Management
+        {
+            resource: Models.Wallet,
+            options: {
+                navigation: {
+                    name: 'Promotions',
+                    icon: 'Tag'
+                },
+                listProperties: ['customer', 'balance', 'totalEarned', 'totalSpent', 'isFrozen'],
+                editProperties: ['isFrozen', 'frozenReason'],
+                actions: {
+                    new: { isVisible: false },
+                    delete: { isVisible: false }
+                }
+            }
+        },
     ],
     branding: {
         companyName: 'GoatGoat Admin',

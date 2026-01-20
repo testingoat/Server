@@ -97,6 +97,25 @@ const orderSchema = new mongoose.Schema({
             distance_km: { type: Number, default: 0 }
         }
     },
+    // ============ COUPON & DISCOUNTS ============
+    coupon: {
+        code: { type: String },
+        couponId: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' },
+        discountType: {
+            type: String,
+            enum: ['flat', 'percentage', 'free_delivery', 'bogo', 'cashback', null],
+            default: null
+        },
+        discountAmount: { type: Number, default: 0 }
+    },
+    // Subtotal before any discounts
+    subtotal: { type: Number },
+    // Total discount applied (from coupon)
+    discount: { type: Number, default: 0 },
+    // Wallet amount used
+    walletAmountUsed: { type: Number, default: 0 },
+    // Free delivery from coupon
+    freeDeliveryApplied: { type: Boolean, default: false },
     totalPrice: { type: Number, required: true },
     deliveryFee: { type: Number, default: 0 },
     deliveryPartnerEarnings: { type: Number, default: 0 },
