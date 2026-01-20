@@ -812,37 +812,37 @@ export const admin = new AdminJS({
                 properties: {
                     type: {
                         availableValues: [
-                            { value: 'flat', label: '₹ Flat Discount' },
-                            { value: 'percentage', label: '% Percentage' },
-                            { value: 'free_delivery', label: '🚚 Free Delivery' },
-                            { value: 'cashback', label: '💰 Cashback' },
-                            { value: 'bogo', label: '🎁 Buy One Get One' }
+                            { value: 'flat', label: 'Flat Discount (Rs)' },
+                            { value: 'percentage', label: 'Percentage (%)' },
+                            { value: 'free_delivery', label: 'Free Delivery' },
+                            { value: 'cashback', label: 'Cashback' },
+                            { value: 'bogo', label: 'Buy One Get One' }
                         ]
                     },
                     applicableTo: {
                         availableValues: [
                             { value: 'all', label: 'All Users' },
-                            { value: 'new_users', label: '🆕 New Users Only' },
-                            { value: 'specific_users', label: '👤 Specific Users' },
-                            { value: 'category', label: '📁 Category' },
-                            { value: 'seller', label: '🏪 Seller' },
-                            { value: 'product', label: '📦 Product' }
+                            { value: 'new_users', label: 'New Users Only' },
+                            { value: 'specific_users', label: 'Specific Users' },
+                            { value: 'category', label: 'Category' },
+                            { value: 'seller', label: 'Seller' },
+                            { value: 'product', label: 'Product' }
                         ]
                     },
                     // Abuse Prevention Fields
                     blockedUsers: {
                         isArray: true,
                         reference: 'Customer',
-                        description: '⛔ ABUSE PREVENTION: Users blocked from using this coupon'
+                        description: 'ABUSE PREVENTION: Users blocked from using this coupon'
                     },
                     cooldownHours: {
-                        description: '⏱️ ABUSE PREVENTION: Hours before same user can use again (0 = no cooldown)'
+                        description: 'ABUSE PREVENTION: Hours before same user can use again (0 = no cooldown)'
                     },
                     maxDiscountPerDay: {
-                        description: '📊 ABUSE PREVENTION: Max total discount per user per day (empty = no limit)'
+                        description: 'ABUSE PREVENTION: Max total discount per user per day (empty = no limit)'
                     },
                     minOrdersRequired: {
-                        description: '🔢 ABUSE PREVENTION: Minimum completed orders to unlock (0 = no requirement)'
+                        description: 'ABUSE PREVENTION: Minimum completed orders to unlock (0 = no requirement)'
                     },
                     // Targeting Fields
                     allowedUsers: {
